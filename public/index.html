@@ -714,7 +714,7 @@ function Configuracion(){
     if(p.get('ml_error')){window.history.replaceState({},'',window.location.pathname);setMsg('❌ Error ML: '+p.get('ml_error')+(p.get('detail')?' — '+p.get('detail'):''));setMsgType('error');}
     const s=await getSettings();
     if(s.flex_tipos)setTipos(s.flex_tipos);
-    if(s.ml_access_token){setToken(s.ml_access_token);setTokenMasked(true);}
+    verificarToken();
     setLoading(false);
   };
   React.useEffect(()=>{load()},[]);
@@ -806,12 +806,23 @@ function MercadoLibre(){
     (async()=>{const s=await getSettings();if(s.ml_access_token){setToken(s.ml_access_token);verificarToken(s.ml_access_token);}})();
   },[]);
 
-  const verificarToken=async(t)=>{
-    try{const r=await fetch('https://api.mercadolibre.com/users/me',{headers:{Authorization:`Bearer ${t}`}});const d=await r.json();
-      if(d.id){setConectado(true);showMsg(`✓ Conectado como ${d.nickname||d.id}`);}
-      else{setConectado(false);showMsg('Token inválido — usá el botón OAuth en ⚙️ Configuración','error');}
-    }catch{setConectado(false);showMsg('No se pudo verificar el token','error');}
-  };
+  const verificarToken = async () => {
+  try {
+    const r = await fetch('/api/ml-oauth-status', { credentials: 'include' });
+    const d = await r.json();
+
+    if (d.ok) {
+      setConectado(true);
+      showMsg(`✓ Conectado como ${d.user_id}`);
+    } else {
+      setConectado(false);
+      showMsg('No conectado — usá el botón OAuth en ⚙️ Configuración','error');
+    }
+  } catch {
+    setConectado(false);
+    showMsg('Error verificando conexión','error');
+  }
+};
 
   const traerOrdenes=async()=>{
     setLoading(true);setMsg('');
