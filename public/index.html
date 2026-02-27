@@ -16,80 +16,158 @@ body{font-family:'Inter',sans-serif;background:#0f1117;color:#e2e8f0;min-height:
 ::-webkit-scrollbar{width:6px;height:6px}
 ::-webkit-scrollbar-track{background:#1a1d2e}
 ::-webkit-scrollbar-thumb{background:#3d4466;border-radius:3px}
+
+/* ── LAYOUT ── */
 .app{display:flex;min-height:100vh}
-.sidebar{width:220px;background:#13162a;border-right:1px solid #1e2340;display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:100}
-.sidebar-logo{padding:20px 16px 16px;border-bottom:1px solid #1e2340}
+
+/* ── SIDEBAR DESKTOP ── */
+.sidebar{width:220px;background:#13162a;border-right:1px solid #1e2340;display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:200;transition:transform .25s}
+.sidebar-logo{padding:20px 16px 16px;border-bottom:1px solid #1e2340;display:flex;align-items:center;gap:10px}
 .sidebar-logo h1{font-size:16px;font-weight:700;color:#fff;letter-spacing:.5px}
 .sidebar-logo span{font-size:11px;color:#5b6396;font-weight:400}
-.sidebar-nav{flex:1;padding:12px 0;overflow-y:auto}
-.nav-item{display:flex;align-items:center;gap:10px;padding:10px 16px;cursor:pointer;color:#8892b0;font-size:13px;font-weight:500;transition:all .2s;border-left:3px solid transparent}
+.sidebar-nav{flex:1;padding:12px 0;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.nav-item{display:flex;align-items:center;gap:10px;padding:12px 16px;cursor:pointer;color:#8892b0;font-size:13px;font-weight:500;transition:all .2s;border-left:3px solid transparent;-webkit-tap-highlight-color:transparent}
 .nav-item:hover{color:#c4ccf0;background:#1a1d35}
 .nav-item.active{color:#818cf8;background:#1e2240;border-left-color:#818cf8}
-.nav-item .icon{font-size:16px;width:20px;text-align:center}
+.nav-item .icon{font-size:18px;width:24px;text-align:center;flex-shrink:0}
+
+/* ── MAIN ── */
 .main{margin-left:220px;flex:1;padding:24px;min-height:100vh}
-.page-header{margin-bottom:24px}
-.page-header h2{font-size:22px;font-weight:700;color:#fff}
-.page-header p{font-size:13px;color:#5b6396;margin-top:4px}
-.cards-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;margin-bottom:28px}
-.card{background:#13162a;border:1px solid #1e2340;border-radius:12px;padding:20px}
-.card-label{font-size:12px;color:#5b6396;font-weight:500;text-transform:uppercase;letter-spacing:.5px}
-.card-value{font-size:24px;font-weight:700;color:#fff;margin-top:6px}
+
+/* ── TOPBAR (mobile) ── */
+.topbar{display:none;position:fixed;top:0;left:0;right:0;height:56px;background:#13162a;border-bottom:1px solid #1e2340;z-index:150;align-items:center;padding:0 16px;gap:12px}
+.topbar-title{font-size:15px;font-weight:700;color:#fff;flex:1}
+.hamburger{background:none;border:none;cursor:pointer;color:#8892b0;padding:4px;display:flex;flex-direction:column;gap:5px}
+.hamburger span{display:block;width:22px;height:2px;background:currentColor;border-radius:2px;transition:all .2s}
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:190}
+
+/* ── CARDS ── */
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin-bottom:24px}
+.card{background:#13162a;border:1px solid #1e2340;border-radius:12px;padding:18px}
+.card-label{font-size:11px;color:#5b6396;font-weight:500;text-transform:uppercase;letter-spacing:.5px}
+.card-value{font-size:22px;font-weight:700;color:#fff;margin-top:6px}
 .card-value.green{color:#34d399}.card-value.red{color:#f87171}.card-value.blue{color:#60a5fa}.card-value.yellow{color:#fbbf24}
-.card-sub{font-size:12px;color:#5b6396;margin-top:4px}
-.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:600;transition:all .2s}
+.card-sub{font-size:11px;color:#5b6396;margin-top:4px}
+
+/* ── BUTTONS ── */
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;padding:9px 16px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:600;transition:all .2s;white-space:nowrap;-webkit-tap-highlight-color:transparent}
 .btn-primary{background:#4f46e5;color:#fff}.btn-primary:hover{background:#4338ca}
 .btn-secondary{background:#1e2240;color:#8892b0;border:1px solid #2d3260}.btn-secondary:hover{color:#c4ccf0;background:#252950}
 .btn-danger{background:#7f1d1d;color:#fca5a5}.btn-danger:hover{background:#991b1b}
 .btn-success{background:#065f46;color:#6ee7b7}.btn-success:hover{background:#047857}
 .btn-yellow{background:#78350f;color:#fcd34d}.btn-yellow:hover{background:#92400e}
-.btn-sm{padding:5px 10px;font-size:12px}
+.btn-ml{background:#ffe600;color:#333;font-weight:700}.btn-ml:hover{background:#ffd900}
+.btn-sm{padding:6px 11px;font-size:12px}
 .btn:disabled{opacity:.5;cursor:not-allowed}
-.table-wrap{background:#13162a;border:1px solid #1e2340;border-radius:12px;overflow:hidden}
-table{width:100%;border-collapse:collapse}
+
+/* ── TABLE ── */
+.table-wrap{background:#13162a;border:1px solid #1e2340;border-radius:12px;overflow:hidden;overflow-x:auto;-webkit-overflow-scrolling:touch}
+table{width:100%;border-collapse:collapse;min-width:500px}
 thead{background:#0f1117}
-th{padding:12px 16px;text-align:left;font-size:11px;font-weight:600;color:#5b6396;text-transform:uppercase;letter-spacing:.5px}
-td{padding:11px 16px;font-size:13px;color:#c4ccf0;border-top:1px solid #1a1d35}
+th{padding:11px 14px;text-align:left;font-size:11px;font-weight:600;color:#5b6396;text-transform:uppercase;letter-spacing:.5px;white-space:nowrap}
+td{padding:10px 14px;font-size:13px;color:#c4ccf0;border-top:1px solid #1a1d35;white-space:nowrap}
 tr:hover td{background:#16192e}
+
+/* ── BADGES ── */
 .badge{display:inline-block;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:600}
 .badge-green{background:#064e3b;color:#6ee7b7}.badge-red{background:#7f1d1d;color:#fca5a5}
 .badge-blue{background:#1e3a5f;color:#93c5fd}.badge-yellow{background:#78350f;color:#fcd34d}
 .badge-purple{background:#3b0764;color:#d8b4fe}.badge-gray{background:#1e2240;color:#8892b0}
-.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:999;display:flex;align-items:center;justify-content:center}
-.modal{background:#13162a;border:1px solid #2d3260;border-radius:16px;padding:28px;width:100%;max-width:520px;max-height:90vh;overflow-y:auto}
-.modal h3{font-size:18px;font-weight:700;color:#fff;margin-bottom:20px}
-.form-group{margin-bottom:16px}
-.form-group label{display:block;font-size:12px;font-weight:600;color:#8892b0;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
-.form-control{width:100%;padding:9px 12px;background:#0f1117;border:1px solid #2d3260;border-radius:8px;color:#e2e8f0;font-size:13px;outline:none;transition:border .2s}
+
+/* ── MODAL ── */
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:999;display:flex;align-items:flex-end;justify-content:center;padding:0}
+.modal{background:#13162a;border:1px solid #2d3260;border-radius:16px 16px 0 0;padding:24px;width:100%;max-width:100%;max-height:92vh;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.modal h3{font-size:17px;font-weight:700;color:#fff;margin-bottom:18px}
+
+/* ── FORMS ── */
+.form-group{margin-bottom:14px}
+.form-group label{display:block;font-size:11px;font-weight:600;color:#8892b0;margin-bottom:5px;text-transform:uppercase;letter-spacing:.5px}
+.form-control{width:100%;padding:10px 12px;background:#0f1117;border:1px solid #2d3260;border-radius:8px;color:#e2e8f0;font-size:14px;outline:none;transition:border .2s;-webkit-appearance:none}
 .form-control:focus{border-color:#818cf8}
-.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.alert{padding:12px 16px;border-radius:8px;font-size:13px;margin-bottom:16px}
+select.form-control{cursor:pointer}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+
+/* ── ALERTS ── */
+.alert{padding:11px 14px;border-radius:8px;font-size:13px;margin-bottom:14px}
 .alert-error{background:#7f1d1d22;border:1px solid #7f1d1d;color:#fca5a5}
 .alert-success{background:#06423422;border:1px solid #065f46;color:#6ee7b7}
 .alert-warn{background:#78350f22;border:1px solid #78350f;color:#fcd34d}
 .alert-info{background:#1e3a5f22;border:1px solid #1e3a5f;color:#93c5fd}
+
+/* ── MISC ── */
 .loading{display:flex;align-items:center;justify-content:center;padding:40px;color:#5b6396;font-size:14px;gap:10px}
-.spinner{width:18px;height:18px;border:2px solid #2d3260;border-top-color:#818cf8;border-radius:50%;animation:spin .7s linear infinite}
+.spinner{width:18px;height:18px;border:2px solid #2d3260;border-top-color:#818cf8;border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
 @keyframes spin{to{transform:rotate(360deg)}}
-.filters{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
+.filters{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
 .stock-low{color:#fbbf24}.stock-ok{color:#34d399}.stock-zero{color:#f87171}
-.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px}
-.empty{text-align:center;padding:48px;color:#5b6396;font-size:14px}
-.rentab-pos{color:#34d399;font-weight:700}
-.rentab-neg{color:#f87171;font-weight:700}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;flex-wrap:wrap;gap:8px}
+.empty{text-align:center;padding:40px;color:#5b6396;font-size:14px}
+.rentab-pos{color:#34d399;font-weight:700}.rentab-neg{color:#f87171;font-weight:700}
 .live-dot{width:8px;height:8px;background:#34d399;border-radius:50%;display:inline-block;margin-right:6px;animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-.flex-btn{padding:7px 12px;border-radius:8px;border:1px solid #2d3260;background:#0f1117;color:#8892b0;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;text-align:center;line-height:1.3}
+.page-header{margin-bottom:20px}
+.page-header h2{font-size:20px;font-weight:700;color:#fff}
+.page-header p{font-size:12px;color:#5b6396;margin-top:3px}
+
+/* ── FLEX BUTTONS ── */
+.flex-btn{padding:8px 10px;border-radius:8px;border:1px solid #2d3260;background:#0f1117;color:#8892b0;font-size:12px;font-weight:600;cursor:pointer;transition:all .2s;text-align:center;line-height:1.4;min-width:80px}
 .flex-btn.active{background:#4f46e5;border-color:#4f46e5;color:#fff}
 .flex-btn:hover:not(.active){border-color:#818cf8;color:#c4ccf0}
 .flex-btn-wrap{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px}
+
+/* ── PROGRESS ── */
 .progress-bar{height:4px;background:#1e2340;border-radius:2px;overflow:hidden;margin-top:8px}
 .progress-fill{height:100%;background:#4f46e5;border-radius:2px;transition:width .3s}
+
+/* ── ACTION ROW (mobile bottom buttons) ── */
+.action-row{display:flex;gap:8px;flex-wrap:wrap}
+
+/* ════════════════════════════════════════
+   RESPONSIVE — MOBILE
+   ════════════════════════════════════════ */
 @media(max-width:768px){
-  .sidebar{width:60px}
-  .sidebar .nav-item span,.sidebar-logo h1,.sidebar-logo span{display:none}
-  .main{margin-left:60px;padding:16px}
-  .cards-grid{grid-template-columns:1fr 1fr}
+  /* Ocultar sidebar fijo, mostrar topbar */
+  .sidebar{transform:translateX(-100%);width:260px;box-shadow:4px 0 24px rgba(0,0,0,.5)}
+  .sidebar.open{transform:translateX(0)}
+  .topbar{display:flex}
+  .overlay.open{display:block}
+  .main{margin-left:0;padding:70px 14px 80px}
+
+  /* Cards 2 columnas */
+  .cards-grid{grid-template-columns:1fr 1fr;gap:10px}
+  .card{padding:14px}
+  .card-value{font-size:18px}
+
+  /* Modal full desde abajo */
+  .modal-overlay{align-items:flex-end}
+  .modal{border-radius:16px 16px 0 0;max-height:88vh;padding:20px 16px}
+
+  /* Form row 1 columna en mobile */
   .form-row{grid-template-columns:1fr}
+
+  /* Tabla scroll horizontal */
+  .table-wrap{border-radius:10px}
+
+  /* Section header wrap */
+  .section-header{flex-direction:column;align-items:stretch}
+  .section-header>div{display:flex;gap:6px;flex-wrap:wrap}
+  .section-header .btn{flex:1;min-width:0}
+
+  /* Filters */
+  .filters{gap:6px}
+  .filters .form-control{flex:1;min-width:120px}
+
+  /* Buttons full en mobile cuando solos */
+  .btn-full-mobile{width:100%}
+
+  /* Page header */
+  .page-header h2{font-size:18px}
+}
+
+@media(min-width:769px){
+  /* Modal centrado en desktop */
+  .modal-overlay{align-items:center;padding:20px}
+  .modal{border-radius:16px;max-width:520px;max-height:90vh}
 }
 </style>
 </head>
@@ -107,66 +185,87 @@ const DEFAULT_FLEX_TIPOS = [
   {id:'flex3',label:'Flex Lejano',costo:1800},
 ];
 
-// ── Leer/guardar settings en Supabase (tabla settings, row id=1) ──
-const getSettings = async () => {
-  const {data} = await db.from('settings').select('*').eq('id',1).single();
-  return data || {};
-};
-const saveSettings = async (patch) => {
-  await db.from('settings').upsert({id:1,...patch});
-};
+const getSettings = async()=>{ const{data}=await db.from('settings').select('*').eq('id',1).single(); return data||{}; };
+const saveSettings = async(patch)=>{ await db.from('settings').upsert({id:1,...patch}); };
 
-const parseExcelDate = (val) => {
-  if(!val) return today();
-  if(!isNaN(val) && String(val).length<=5){
-    const d=new Date(Math.round((Number(val)-25569)*86400*1000));
-    return d.toISOString().split('T')[0];
-  }
+const parseExcelDate=(val)=>{
+  if(!val)return today();
+  if(!isNaN(val)&&String(val).length<=5){const d=new Date(Math.round((Number(val)-25569)*86400*1000));return d.toISOString().split('T')[0];}
   const str=String(val).trim();
-  if(str.includes('/')){
-    const p=str.split('/');
-    if(p.length===3){const [d,m,y]=p;return `${y.length===2?'20'+y:y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;}
-  }
-  if(str.match(/^\d{4}-\d{2}-\d{2}/)) return str.slice(0,10);
+  if(str.includes('/')){const p=str.split('/');if(p.length===3){const[d,m,y]=p;return `${y.length===2?'20'+y:y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;}}
+  if(str.match(/^\d{4}-\d{2}-\d{2}/))return str.slice(0,10);
   return today();
 };
 
-const fmt = v=>new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',minimumFractionDigits:0}).format(v||0);
-const fmtDate = d=>d?new Date(d+'T12:00:00').toLocaleDateString('es-AR'):'-';
-const today = ()=>new Date().toISOString().split('T')[0];
+const fmt=v=>new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',minimumFractionDigits:0}).format(v||0);
+const fmtDate=d=>d?new Date(d+'T12:00:00').toLocaleDateString('es-AR'):'-';
+const today=()=>new Date().toISOString().split('T')[0];
 const CANALES=['mercadolibre','tiendanube','instagram','whatsapp','mostrador'];
 const CANAL_LABELS={mercadolibre:'Mercado Libre',tiendanube:'Tienda Nube',instagram:'Instagram',whatsapp:'WhatsApp',mostrador:'Mostrador'};
 const CANAL_COLORS={mercadolibre:'yellow',tiendanube:'blue',instagram:'purple',whatsapp:'green',mostrador:'gray'};
 
-function Badge({canal}){
-  return <span className={`badge badge-${CANAL_COLORS[canal]||'gray'}`}>{CANAL_LABELS[canal]||canal}</span>;
-}
+function Badge({canal}){return<span className={`badge badge-${CANAL_COLORS[canal]||'gray'}`}>{CANAL_LABELS[canal]||canal}</span>;}
+
 function Modal({onClose,children}){
-  return <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
+  React.useEffect(()=>{document.body.style.overflow='hidden';return()=>{document.body.style.overflow='';};},[]);
+  return<div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
     <div className="modal">{children}</div>
   </div>;
 }
+
 function useExcelImport(onImport){
   const ref=React.useRef();
-  const handleFile=(e)=>{
-    const file=e.target.files[0];if(!file)return;
-    const reader=new FileReader();
-    reader.onload=ev=>{
-      const wb=XLSX.read(ev.target.result,{type:'binary'});
-      const ws=wb.Sheets[wb.SheetNames[0]];
-      onImport(XLSX.utils.sheet_to_json(ws,{defval:''}));
-    };
-    reader.readAsBinaryString(file);e.target.value='';
-  };
+  const handleFile=(e)=>{const file=e.target.files[0];if(!file)return;const reader=new FileReader();reader.onload=ev=>{const wb=XLSX.read(ev.target.result,{type:'binary'});const ws=wb.Sheets[wb.SheetNames[0]];onImport(XLSX.utils.sheet_to_json(ws,{defval:''}));};reader.readAsBinaryString(file);e.target.value='';};
   const openPicker=()=>ref.current.click();
   const Input=()=><input ref={ref} type="file" accept=".xlsx,.xls,.csv" style={{display:'none'}} onChange={handleFile}/>;
-  return {openPicker,Input};
+  return{openPicker,Input};
 }
+
 function descargarPlantilla(nombre,columnas){
-  const ws=XLSX.utils.aoa_to_sheet([columnas]);
-  const wb=XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(wb,ws,'Datos');
-  XLSX.writeFile(wb,`plantilla_${nombre}.xlsx`);
+  const ws=XLSX.utils.aoa_to_sheet([columnas]);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'Datos');XLSX.writeFile(wb,`plantilla_${nombre}.xlsx`);
+}
+
+// ── Sidebar con hamburger mobile ──
+function Sidebar({page,setPage,currentLabel}){
+  const [open,setOpen]=React.useState(false);
+  const close=()=>setOpen(false);
+  const PAGES=[
+    {id:'dashboard',label:'Dashboard',icon:'📊'},
+    {id:'stock',label:'Stock en vivo',icon:'📡'},
+    {id:'productos',label:'Productos',icon:'📦'},
+    {id:'compras',label:'Compras',icon:'🛒'},
+    {id:'ventas',label:'Ventas',icon:'💰'},
+    {id:'gastos',label:'Gastos',icon:'💸'},
+    {id:'precios',label:'Precios',icon:'🏷️'},
+    {id:'ml',label:'Mercado Libre',icon:'🟡'},
+    {id:'config',label:'Configuración',icon:'⚙️'},
+  ];
+  return<>
+    {/* Topbar mobile */}
+    <div className="topbar">
+      <button className="hamburger" onClick={()=>setOpen(o=>!o)} aria-label="Menú">
+        <span/><span/><span/>
+      </button>
+      <span className="topbar-title">Mini ERP</span>
+      <span style={{fontSize:13,color:'#5b6396'}}>{currentLabel}</span>
+    </div>
+    {/* Overlay */}
+    <div className={`overlay${open?' open':''}`} onClick={close}/>
+    {/* Sidebar */}
+    <aside className={`sidebar${open?' open':''}`}>
+      <div className="sidebar-logo">
+        <div>
+          <h1>Mini ERP</h1>
+          <span>Gestión de negocio</span>
+        </div>
+      </div>
+      <nav className="sidebar-nav">
+        {PAGES.map(p=><div key={p.id} className={`nav-item${page===p.id?' active':''}`} onClick={()=>{setPage(p.id);close();}}>
+          <span className="icon">{p.icon}</span><span>{p.label}</span>
+        </div>)}
+      </nav>
+    </aside>
+  </>;
 }
 
 // ===== DASHBOARD =====
@@ -174,27 +273,26 @@ function Dashboard(){
   const [data,setData]=React.useState(null);
   const mes=new Date().toISOString().slice(0,7);
   const load=async()=>{
-    const [{data:v},{data:c},{data:g},{data:p},{data:s}]=await Promise.all([
+    const [{data:v},{data:g},{data:p},{data:s}]=await Promise.all([
       db.from('ventas').select('total,costo_envio,costo_producto,comision_ml,envio_flex,otras_comisiones').gte('fecha',mes+'-01'),
-      db.from('compras').select('total').gte('fecha',mes+'-01'),
       db.from('gastos').select('monto').gte('fecha',mes+'-01'),
       db.from('productos').select('stock,stock_minimo'),
       db.from('settings').select('costo_operativo_fijo_mensual').eq('id',1).single(),
     ]);
-    const ventasBrutas  =(v||[]).reduce((a,x)=>a+Number(x.total||0),0);
-    const totalFlex     =(v||[]).reduce((a,x)=>a+Number(x.envio_flex||x.costo_envio||0),0);
-    const totalComML    =(v||[]).reduce((a,x)=>a+Number(x.comision_ml||0),0);
-    const totalOtrasCom =(v||[]).reduce((a,x)=>a+Number(x.otras_comisiones||0),0);
-    const totalCostProd =(v||[]).reduce((a,x)=>a+Number(x.costo_producto||0),0);
-    const gastosNorm    =(g||[]).reduce((a,x)=>a+Number(x.monto),0);
-    const costoFijo     =Number(s?.costo_operativo_fijo_mensual||0);
-    const ventasNetas   =ventasBrutas-totalFlex-totalComML-totalOtrasCom-totalCostProd-costoFijo-gastosNorm;
+    const ventasBrutas=(v||[]).reduce((a,x)=>a+Number(x.total||0),0);
+    const totalFlex=(v||[]).reduce((a,x)=>a+Number(x.envio_flex||x.costo_envio||0),0);
+    const totalComML=(v||[]).reduce((a,x)=>a+Number(x.comision_ml||0),0);
+    const totalOtrasCom=(v||[]).reduce((a,x)=>a+Number(x.otras_comisiones||0),0);
+    const totalCostProd=(v||[]).reduce((a,x)=>a+Number(x.costo_producto||0),0);
+    const gastosNorm=(g||[]).reduce((a,x)=>a+Number(x.monto),0);
+    const costoFijo=Number(s?.costo_operativo_fijo_mensual||0);
+    const ventasNetas=ventasBrutas-totalFlex-totalComML-totalOtrasCom-totalCostProd-costoFijo-gastosNorm;
     setData({ventasBrutas,totalFlex,totalComML,totalCostProd,gastosNorm,costoFijo,ventasNetas,
       stockBajo:(p||[]).filter(x=>x.stock<=x.stock_minimo).length,ventasCount:(v||[]).length});
   };
   React.useEffect(()=>{load();const iv=setInterval(load,30000);return()=>clearInterval(iv);},[]);
-  if(!data)return <div className="loading"><div className="spinner"/><span>Cargando...</span></div>;
-  return <>
+  if(!data)return<div className="loading"><div className="spinner"/><span>Cargando...</span></div>;
+  return<>
     <div className="page-header">
       <h2>📊 Dashboard</h2>
       <p><span className="live-dot"/>En vivo — {new Date().toLocaleString('es-AR',{month:'long',year:'numeric'})}</p>
@@ -202,11 +300,11 @@ function Dashboard(){
     <div className="cards-grid">
       <div className="card"><div className="card-label">💰 Ventas brutas</div><div className="card-value green">{fmt(data.ventasBrutas)}</div><div className="card-sub">{data.ventasCount} transacciones</div></div>
       <div className="card"><div className="card-label">📦 Costo productos</div><div className="card-value red">{fmt(data.totalCostProd)}</div></div>
-      <div className="card"><div className="card-label">🚚 Flex (envíos)</div><div className="card-value red">{fmt(data.totalFlex)}</div></div>
-      <div className="card"><div className="card-label">🟡 Comisiones ML</div><div className="card-value red">{fmt(data.totalComML)}</div></div>
+      <div className="card"><div className="card-label">🚚 Flex</div><div className="card-value red">{fmt(data.totalFlex)}</div></div>
+      <div className="card"><div className="card-label">🟡 Com. ML</div><div className="card-value red">{fmt(data.totalComML)}</div></div>
       <div className="card"><div className="card-label">⚙️ Costo fijo</div><div className="card-value red">{fmt(data.costoFijo)}</div></div>
-      <div className="card"><div className="card-label">💸 Gastos operativos</div><div className="card-value red">{fmt(data.gastosNorm)}</div></div>
-      <div className="card"><div className="card-label">💵 Ventas netas</div><div className={`card-value ${data.ventasNetas>=0?'green':'red'}`}>{fmt(data.ventasNetas)}</div><div className="card-sub">Lo que queda en mano</div></div>
+      <div className="card"><div className="card-label">💸 Gastos</div><div className="card-value red">{fmt(data.gastosNorm)}</div></div>
+      <div className="card"><div className="card-label">💵 Ventas netas</div><div className={`card-value ${data.ventasNetas>=0?'green':'red'}`}>{fmt(data.ventasNetas)}</div><div className="card-sub">En mano</div></div>
       <div className="card"><div className="card-label">⚠️ Stock bajo</div><div className={`card-value ${data.stockBajo>0?'yellow':'green'}`}>{data.stockBajo}</div><div className="card-sub">{data.stockBajo>0?'Revisar':'OK'}</div></div>
     </div>
   </>;
@@ -214,60 +312,39 @@ function Dashboard(){
 
 // ===== PRODUCTOS =====
 function Productos(){
-  const [items,setItems]=React.useState([]);
-  const [loading,setLoading]=React.useState(true);
-  const [modal,setModal]=React.useState(false);
-  const [form,setForm]=React.useState({nombre:'',sku:'',categoria:'',stock:0,stock_minimo:5,costo:0});
-  const [editId,setEditId]=React.useState(null);
-  const [search,setSearch]=React.useState('');
-  const [msg,setMsg]=React.useState('');
-  const [importMsg,setImportMsg]=React.useState('');
+  const [items,setItems]=React.useState([]);const [loading,setLoading]=React.useState(true);const [modal,setModal]=React.useState(false);
+  const [form,setForm]=React.useState({nombre:'',sku:'',categoria:'',stock:0,stock_minimo:5,costo:0});const [editId,setEditId]=React.useState(null);
+  const [search,setSearch]=React.useState('');const [msg,setMsg]=React.useState('');const [importMsg,setImportMsg]=React.useState('');
   const load=async()=>{setLoading(true);const{data}=await db.from('productos').select('*').order('nombre');setItems(data||[]);setLoading(false);};
   React.useEffect(()=>{load()},[]);
-  const save=async()=>{
-    if(!form.nombre){setMsg('El nombre es obligatorio');return;}
-    const p={...form,stock:Number(form.stock),stock_minimo:Number(form.stock_minimo),costo:Number(form.costo)};
-    if(editId)await db.from('productos').update(p).eq('id',editId);
-    else await db.from('productos').insert(p);
-    setModal(false);setMsg('');setForm({nombre:'',sku:'',categoria:'',stock:0,stock_minimo:5,costo:0});setEditId(null);load();
-  };
+  const save=async()=>{if(!form.nombre){setMsg('El nombre es obligatorio');return;}const p={...form,stock:Number(form.stock),stock_minimo:Number(form.stock_minimo),costo:Number(form.costo)};if(editId)await db.from('productos').update(p).eq('id',editId);else await db.from('productos').insert(p);setModal(false);setMsg('');setForm({nombre:'',sku:'',categoria:'',stock:0,stock_minimo:5,costo:0});setEditId(null);load();};
   const del=async(id)=>{if(!confirm('¿Eliminar?'))return;await db.from('productos').delete().eq('id',id);load();};
   const edit=p=>{setForm({nombre:p.nombre,sku:p.sku||'',categoria:p.categoria||'',stock:p.stock,stock_minimo:p.stock_minimo,costo:p.costo});setEditId(p.id);setModal(true);};
-  const {openPicker,Input}=useExcelImport(async(rows)=>{
-    setImportMsg('Importando...');let ok=0,err=0;
-    for(const r of rows){
-      const nombre=r['nombre']||r['Nombre']||r['NOMBRE']||'';
-      if(!nombre){err++;continue;}
-      await db.from('productos').insert({nombre,sku:r['sku']||r['SKU']||'',categoria:r['categoria']||r['Categoría']||'',
-        stock:Number(r['stock']||0),stock_minimo:Number(r['stock_minimo']||5),costo:Number(r['costo']||0)});ok++;
-    }
-    setImportMsg(`✅ ${ok} importados${err>0?`, ${err} errores`:''}`);load();
-  });
+  const {openPicker,Input}=useExcelImport(async(rows)=>{setImportMsg('Importando...');let ok=0,err=0;for(const r of rows){const nombre=r['nombre']||r['Nombre']||r['NOMBRE']||'';if(!nombre){err++;continue;}await db.from('productos').insert({nombre,sku:r['sku']||r['SKU']||'',categoria:r['categoria']||r['Categoría']||'',stock:Number(r['stock']||0),stock_minimo:Number(r['stock_minimo']||5),costo:Number(r['costo']||0)});ok++;}setImportMsg(`✅ ${ok} importados${err>0?`, ${err} errores`:''}`);load();});
   const filtered=items.filter(x=>x.nombre.toLowerCase().includes(search.toLowerCase())||(x.sku||'').toLowerCase().includes(search.toLowerCase()));
-  return <>
+  return<>
     <Input/>
     <div className="page-header"><h2>📦 Productos & Stock</h2></div>
     <div className="section-header">
-      <input className="form-control" style={{width:200}} placeholder="Buscar..." value={search} onChange={e=>setSearch(e.target.value)}/>
-      <div style={{display:'flex',gap:8}}>
+      <input className="form-control" style={{maxWidth:200}} placeholder="Buscar..." value={search} onChange={e=>setSearch(e.target.value)}/>
+      <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
         <button className="btn btn-secondary btn-sm" onClick={()=>descargarPlantilla('productos',['nombre','sku','categoria','stock','stock_minimo','costo'])}>⬇ Plantilla</button>
-        <button className="btn btn-yellow btn-sm" onClick={openPicker}>📥 Importar Excel</button>
-        <button className="btn btn-primary" onClick={()=>{setForm({nombre:'',sku:'',categoria:'',stock:0,stock_minimo:5,costo:0});setEditId(null);setModal(true)}}>+ Nuevo</button>
+        <button className="btn btn-yellow btn-sm" onClick={openPicker}>📥 Importar</button>
+        <button className="btn btn-primary btn-sm" onClick={()=>{setForm({nombre:'',sku:'',categoria:'',stock:0,stock_minimo:5,costo:0});setEditId(null);setModal(true)}}>+ Nuevo</button>
       </div>
     </div>
-    {importMsg&&<div className="alert alert-success" style={{marginBottom:12}}>{importMsg}</div>}
+    {importMsg&&<div className="alert alert-success">{importMsg}</div>}
     {loading?<div className="loading"><div className="spinner"/></div>:
     <div className="table-wrap"><table>
-      <thead><tr><th>Nombre</th><th>SKU</th><th>Categoría</th><th>Stock</th><th>Mín.</th><th>Costo</th><th></th></tr></thead>
+      <thead><tr><th>Nombre</th><th>SKU</th><th>Stock</th><th>Costo</th><th></th></tr></thead>
       <tbody>
-        {filtered.length===0?<tr><td colSpan={7}><div className="empty">Sin productos</div></td></tr>:
+        {filtered.length===0?<tr><td colSpan={5}><div className="empty">Sin productos</div></td></tr>:
         filtered.map(p=><tr key={p.id}>
           <td style={{fontWeight:600,color:'#fff'}}>{p.nombre}</td>
           <td style={{color:'#5b6396'}}>{p.sku||'-'}</td>
-          <td>{p.categoria||'-'}</td>
-          <td><span className={p.stock===0?'stock-zero':p.stock<=p.stock_minimo?'stock-low':'stock-ok'}>{p.stock} u.</span></td>
-          <td>{p.stock_minimo}</td><td>{fmt(p.costo)}</td>
-          <td><button className="btn btn-secondary btn-sm" onClick={()=>edit(p)}>✎</button> <button className="btn btn-danger btn-sm" onClick={()=>del(p.id)}>✕</button></td>
+          <td><span className={p.stock===0?'stock-zero':p.stock<=p.stock_minimo?'stock-low':'stock-ok'}>{p.stock}u</span></td>
+          <td>{fmt(p.costo)}</td>
+          <td style={{display:'flex',gap:4}}><button className="btn btn-secondary btn-sm" onClick={()=>edit(p)}>✎</button><button className="btn btn-danger btn-sm" onClick={()=>del(p.id)}>✕</button></td>
         </tr>)}
       </tbody>
     </table></div>}
@@ -294,64 +371,35 @@ function Productos(){
 
 // ===== COMPRAS =====
 function Compras(){
-  const [items,setItems]=React.useState([]);
-  const [productos,setProductos]=React.useState([]);
-  const [loading,setLoading]=React.useState(true);
-  const [modal,setModal]=React.useState(false);
-  const [form,setForm]=React.useState({producto_id:'',producto_nombre:'',cantidad:1,costo_unitario:0,proveedor:'',fecha:today(),notas:''});
-  const [msg,setMsg]=React.useState('');
-  const [importMsg,setImportMsg]=React.useState('');
+  const [items,setItems]=React.useState([]);const [productos,setProductos]=React.useState([]);const [loading,setLoading]=React.useState(true);
+  const [modal,setModal]=React.useState(false);const [form,setForm]=React.useState({producto_id:'',producto_nombre:'',cantidad:1,costo_unitario:0,proveedor:'',fecha:today(),notas:''});
+  const [msg,setMsg]=React.useState('');const [importMsg,setImportMsg]=React.useState('');
   const load=async()=>{setLoading(true);const [{data:c},{data:p}]=await Promise.all([db.from('compras').select('*').order('fecha',{ascending:false}),db.from('productos').select('id,nombre,costo,stock').order('nombre')]);setItems(c||[]);setProductos(p||[]);setLoading(false);};
   React.useEffect(()=>{load()},[]);
-  const save=async()=>{
-    if(!form.cantidad||!form.costo_unitario){setMsg('Completá cantidad y costo');return;}
-    const nombre=form.producto_id?(productos.find(p=>p.id===form.producto_id)||{}).nombre||form.producto_nombre:form.producto_nombre;
-    await db.from('compras').insert({producto_id:form.producto_id||null,producto_nombre:nombre,cantidad:Number(form.cantidad),costo_unitario:Number(form.costo_unitario),proveedor:form.proveedor,fecha:form.fecha,notas:form.notas});
-    if(form.producto_id){const prod=productos.find(p=>p.id===form.producto_id);if(prod)await db.from('productos').update({stock:prod.stock+Number(form.cantidad),costo:Number(form.costo_unitario)}).eq('id',form.producto_id);}
-    setModal(false);setMsg('');setForm({producto_id:'',producto_nombre:'',cantidad:1,costo_unitario:0,proveedor:'',fecha:today(),notas:''});load();
-  };
+  const save=async()=>{if(!form.cantidad||!form.costo_unitario){setMsg('Completá cantidad y costo');return;}const nombre=form.producto_id?(productos.find(p=>p.id===form.producto_id)||{}).nombre||form.producto_nombre:form.producto_nombre;await db.from('compras').insert({producto_id:form.producto_id||null,producto_nombre:nombre,cantidad:Number(form.cantidad),costo_unitario:Number(form.costo_unitario),proveedor:form.proveedor,fecha:form.fecha,notas:form.notas});if(form.producto_id){const prod=productos.find(p=>p.id===form.producto_id);if(prod)await db.from('productos').update({stock:prod.stock+Number(form.cantidad),costo:Number(form.costo_unitario)}).eq('id',form.producto_id);}setModal(false);setMsg('');setForm({producto_id:'',producto_nombre:'',cantidad:1,costo_unitario:0,proveedor:'',fecha:today(),notas:''});load();};
   const del=async(id)=>{if(!confirm('¿Eliminar?'))return;await db.from('compras').delete().eq('id',id);load();};
-  const {openPicker,Input}=useExcelImport(async(rows)=>{
-    if(!rows||rows.length===0){setImportMsg('⚠️ El archivo está vacío');return;}
-    setImportMsg(`Importando ${rows.length} filas...`);
-    const {data:prods}=await db.from('productos').select('id,nombre,sku,stock,costo');
-    let ok=0,err=0,stockAct=0,errores=[];
-    for(const r of rows){
-      const norm={};Object.keys(r).forEach(k=>{norm[k.trim().toLowerCase().replace(/\s+/g,'_')]=r[k];});
-      const nombreB=String(norm['producto']||norm['producto_nombre']||norm['nombre']||'').trim();
-      const skuB=String(norm['sku']||'').trim();
-      const cantidad=Number(norm['cantidad']||1);
-      const costoU=Number(norm['costo_unitario']||norm['costo']||0);
-      const prod=(prods||[]).find(p=>(skuB&&p.sku&&p.sku.trim().toLowerCase()===skuB.toLowerCase())||(nombreB&&p.nombre.trim().toLowerCase()===nombreB.toLowerCase()));
-      const {error}=await db.from('compras').insert({producto_id:prod?.id||null,producto_nombre:nombreB||'Sin nombre',cantidad,costo_unitario:costoU,proveedor:String(norm['proveedor']||'').trim(),fecha:parseExcelDate(norm['fecha']),notas:String(norm['notas']||'').trim()});
-      if(error){err++;errores.push(error.message);continue;}
-      ok++;
-      if(prod){await db.from('productos').update({stock:prod.stock+cantidad,costo:costoU||prod.costo}).eq('id',prod.id);prod.stock+=cantidad;stockAct++;}
-    }
-    if(ok>0)load();
-    setImportMsg(ok>0?`✅ ${ok} importadas, ${stockAct} stocks actualizados${err>0?' | ⚠️ '+err+' errores: '+errores[0]:''}`:`❌ Error: ${errores[0]||'revisar formato'}`);
-  });
-  return <>
+  const {openPicker,Input}=useExcelImport(async(rows)=>{if(!rows||rows.length===0){setImportMsg('⚠️ El archivo está vacío');return;}setImportMsg(`Importando...`);const {data:prods}=await db.from('productos').select('id,nombre,sku,stock,costo');let ok=0,err=0,stockAct=0,errores=[];for(const r of rows){const norm={};Object.keys(r).forEach(k=>{norm[k.trim().toLowerCase().replace(/\s+/g,'_')]=r[k];});const nombreB=String(norm['producto']||norm['producto_nombre']||norm['nombre']||'').trim();const skuB=String(norm['sku']||'').trim();const cantidad=Number(norm['cantidad']||1);const costoU=Number(norm['costo_unitario']||norm['costo']||0);const prod=(prods||[]).find(p=>(skuB&&p.sku&&p.sku.trim().toLowerCase()===skuB.toLowerCase())||(nombreB&&p.nombre.trim().toLowerCase()===nombreB.toLowerCase()));const {error}=await db.from('compras').insert({producto_id:prod?.id||null,producto_nombre:nombreB||'Sin nombre',cantidad,costo_unitario:costoU,proveedor:String(norm['proveedor']||'').trim(),fecha:parseExcelDate(norm['fecha']),notas:String(norm['notas']||'').trim()});if(error){err++;errores.push(error.message);continue;}ok++;if(prod){await db.from('productos').update({stock:prod.stock+cantidad,costo:costoU||prod.costo}).eq('id',prod.id);prod.stock+=cantidad;stockAct++;}}if(ok>0)load();setImportMsg(ok>0?`✅ ${ok} importadas, ${stockAct} stocks actualizados${err>0?' | ⚠️ '+err+' errores':''}`:`❌ Error: ${errores[0]||'revisar formato'}`);});
+  return<>
     <Input/>
     <div className="page-header"><h2>🛒 Compras</h2></div>
     <div className="section-header">
       <span style={{color:'#5b6396',fontSize:13}}>{items.length} registros</span>
-      <div style={{display:'flex',gap:8}}>
+      <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
         <button className="btn btn-secondary btn-sm" onClick={()=>descargarPlantilla('compras',['producto','cantidad','costo_unitario','proveedor','fecha','notas'])}>⬇ Plantilla</button>
-        <button className="btn btn-yellow btn-sm" onClick={openPicker}>📥 Importar Excel</button>
-        <button className="btn btn-primary" onClick={()=>setModal(true)}>+ Nueva</button>
+        <button className="btn btn-yellow btn-sm" onClick={openPicker}>📥 Importar</button>
+        <button className="btn btn-primary btn-sm" onClick={()=>setModal(true)}>+ Nueva</button>
       </div>
     </div>
-    {importMsg&&<div className="alert alert-success" style={{marginBottom:12}}>{importMsg}</div>}
+    {importMsg&&<div className="alert alert-success">{importMsg}</div>}
     {loading?<div className="loading"><div className="spinner"/></div>:
     <div className="table-wrap"><table>
-      <thead><tr><th>Fecha</th><th>Producto</th><th>Cant.</th><th>Costo unit.</th><th>Total</th><th>Proveedor</th><th></th></tr></thead>
+      <thead><tr><th>Fecha</th><th>Producto</th><th>Cant.</th><th>C.Unit.</th><th>Total</th><th></th></tr></thead>
       <tbody>
-        {items.length===0?<tr><td colSpan={7}><div className="empty">Sin compras</div></td></tr>:
+        {items.length===0?<tr><td colSpan={6}><div className="empty">Sin compras</div></td></tr>:
         items.map(c=><tr key={c.id}>
           <td>{fmtDate(c.fecha)}</td><td style={{fontWeight:600,color:'#fff'}}>{c.producto_nombre||'-'}</td>
           <td>{c.cantidad}</td><td>{fmt(c.costo_unitario)}</td>
-          <td style={{color:'#f87171',fontWeight:600}}>{fmt(c.total)}</td><td>{c.proveedor||'-'}</td>
+          <td style={{color:'#f87171',fontWeight:600}}>{fmt(c.total)}</td>
           <td><button className="btn btn-danger btn-sm" onClick={()=>del(c.id)}>✕</button></td>
         </tr>)}
       </tbody>
@@ -382,164 +430,83 @@ function Compras(){
   </>;
 }
 
-// ===== FLEX SELECTOR (usa tipos desde Supabase) =====
+// ===== FLEX SELECTOR =====
 function FlexSelector({value,onChange,tipos}){
   const numVal=Number(value);
   const [manual,setManual]=React.useState(false);
   const esTipo=tipos.some(t=>t.costo===numVal);
   React.useEffect(()=>{if(!esTipo&&numVal>0)setManual(true);},[]);
-  return <div>
+  return<div>
     <div className="flex-btn-wrap">
-      <button type="button" className={`flex-btn${numVal===0&&!manual?' active':''}`}
-        onClick={()=>{setManual(false);onChange(0);}}>Sin envío</button>
-      {tipos.map(t=>(
-        <button key={t.id} type="button"
-          className={`flex-btn${!manual&&esTipo&&numVal===t.costo?' active':''}`}
-          onClick={()=>{setManual(false);onChange(t.costo);}}>
-          {t.label}<br/><span style={{fontSize:10,opacity:.7}}>{fmt(t.costo)}</span>
-        </button>
-      ))}
-      <button type="button" className={`flex-btn${manual?' active':''}`}
-        onClick={()=>setManual(true)}>Manual</button>
+      <button type="button" className={`flex-btn${numVal===0&&!manual?' active':''}`} onClick={()=>{setManual(false);onChange(0);}}>Sin envío</button>
+      {tipos.map(t=><button key={t.id} type="button" className={`flex-btn${!manual&&numVal===t.costo?' active':''}`} onClick={()=>{setManual(false);onChange(t.costo);}}>
+        {t.label}<br/><span style={{fontSize:10,opacity:.7}}>{fmt(t.costo)}</span>
+      </button>)}
+      <button type="button" className={`flex-btn${manual?' active':''}`} onClick={()=>setManual(true)}>Manual</button>
     </div>
-    {manual&&<input type="number" className="form-control" value={value===0?'':value}
-      onChange={e=>onChange(e.target.value)} placeholder="Ingresá monto de envío"/>}
-    {!manual&&numVal>0&&<div style={{fontSize:11,color:'#818cf8',marginTop:4}}>Costo: {fmt(numVal)}</div>}
+    {manual&&<input type="number" className="form-control" value={value===0?'':value} onChange={e=>onChange(e.target.value)} placeholder="Monto de envío"/>}
+    {!manual&&numVal>0&&<div style={{fontSize:11,color:'#818cf8',marginTop:4}}>Seleccionado: {fmt(numVal)}</div>}
   </div>;
 }
 
 // ===== VENTAS =====
 function Ventas(){
-  const [items,setItems]=React.useState([]);
-  const [productos,setProductos]=React.useState([]);
-  const [costoFijo,setCostoFijo]=React.useState(0);
-  const [flexTipos,setFlexTipos]=React.useState(DEFAULT_FLEX_TIPOS);
-  const [loading,setLoading]=React.useState(true);
-  const [modal,setModal]=React.useState(false);
-  const [filtroCanal,setFiltroCanal]=React.useState('');
+  const [items,setItems]=React.useState([]);const [productos,setProductos]=React.useState([]);
+  const [costoFijo,setCostoFijo]=React.useState(0);const [flexTipos,setFlexTipos]=React.useState(DEFAULT_FLEX_TIPOS);
+  const [loading,setLoading]=React.useState(true);const [modal,setModal]=React.useState(false);const [filtroCanal,setFiltroCanal]=React.useState('');
   const [form,setForm]=React.useState({producto_id:'',producto_nombre:'',cantidad:1,precio_unitario:0,envio_flex:0,comision_ml:0,otras_comisiones:0,costo_producto:0,canal:'mostrador',fecha:today(),notas:''});
-  const [msg,setMsg]=React.useState('');
-  const [importMsg,setImportMsg]=React.useState('');
-
-  const load=async()=>{
-    setLoading(true);
-    const [{data:v},{data:p},{data:s}]=await Promise.all([
-      db.from('ventas').select('*').order('fecha',{ascending:false}),
-      db.from('productos').select('id,nombre,stock,costo,sku').order('nombre'),
-      db.from('settings').select('costo_operativo_fijo_mensual,flex_tipos').eq('id',1).single(),
-    ]);
-    setItems(v||[]);setProductos(p||[]);
-    setCostoFijo(Number(s?.costo_operativo_fijo_mensual||0));
-    setFlexTipos(s?.flex_tipos||DEFAULT_FLEX_TIPOS);
-    setLoading(false);
-  };
+  const [msg,setMsg]=React.useState('');const [importMsg,setImportMsg]=React.useState('');
+  const load=async()=>{setLoading(true);const [{data:v},{data:p},{data:s}]=await Promise.all([db.from('ventas').select('*').order('fecha',{ascending:false}),db.from('productos').select('id,nombre,stock,costo,sku').order('nombre'),db.from('settings').select('costo_operativo_fijo_mensual,flex_tipos').eq('id',1).single()]);setItems(v||[]);setProductos(p||[]);setCostoFijo(Number(s?.costo_operativo_fijo_mensual||0));setFlexTipos(s?.flex_tipos||DEFAULT_FLEX_TIPOS);setLoading(false);};
   React.useEffect(()=>{load()},[]);
-
-  const save=async()=>{
-    if(!form.cantidad||!form.precio_unitario){setMsg('Completá cantidad y precio');return;}
-    const prod=form.producto_id?productos.find(p=>p.id===form.producto_id):null;
-    const nombre=prod?prod.nombre:form.producto_nombre;
-    const costoProd=prod?prod.costo*Number(form.cantidad):Number(form.costo_producto);
-    await db.from('ventas').insert({
-      producto_id:form.producto_id||null,producto_nombre:nombre,
-      cantidad:Number(form.cantidad),precio_unitario:Number(form.precio_unitario),
-      costo_envio:Number(form.envio_flex||0),
-      envio_flex:Number(form.envio_flex||0),
-      comision_ml:Number(form.comision_ml||0),
-      otras_comisiones:Number(form.otras_comisiones||0),
-      costo_producto:costoProd,canal:form.canal,fecha:form.fecha,notas:form.notas,
-    });
-    if(prod)await db.from('productos').update({stock:Math.max(0,prod.stock-Number(form.cantidad))}).eq('id',prod.id);
-    setModal(false);setMsg('');
-    setForm({producto_id:'',producto_nombre:'',cantidad:1,precio_unitario:0,envio_flex:0,comision_ml:0,otras_comisiones:0,costo_producto:0,canal:'mostrador',fecha:today(),notas:''});
-    load();
-  };
+  const save=async()=>{if(!form.cantidad||!form.precio_unitario){setMsg('Completá cantidad y precio');return;}const prod=form.producto_id?productos.find(p=>p.id===form.producto_id):null;const nombre=prod?prod.nombre:form.producto_nombre;const costoProd=prod?prod.costo*Number(form.cantidad):Number(form.costo_producto);await db.from('ventas').insert({producto_id:form.producto_id||null,producto_nombre:nombre,cantidad:Number(form.cantidad),precio_unitario:Number(form.precio_unitario),costo_envio:Number(form.envio_flex||0),envio_flex:Number(form.envio_flex||0),comision_ml:Number(form.comision_ml||0),otras_comisiones:Number(form.otras_comisiones||0),costo_producto:costoProd,canal:form.canal,fecha:form.fecha,notas:form.notas});if(prod)await db.from('productos').update({stock:Math.max(0,prod.stock-Number(form.cantidad))}).eq('id',prod.id);setModal(false);setMsg('');setForm({producto_id:'',producto_nombre:'',cantidad:1,precio_unitario:0,envio_flex:0,comision_ml:0,otras_comisiones:0,costo_producto:0,canal:'mostrador',fecha:today(),notas:''});load();};
   const del=async(id)=>{if(!confirm('¿Eliminar?'))return;await db.from('ventas').delete().eq('id',id);load();};
-
-  const {openPicker,Input}=useExcelImport(async(rows)=>{
-    if(!rows||rows.length===0){setImportMsg('⚠️ El archivo está vacío');return;}
-    setImportMsg(`Importando ${rows.length} filas...`);
-    const {data:prods}=await db.from('productos').select('id,nombre,sku,stock,costo');
-    let ok=0,err=0,stockAct=0,errores=[];
-    for(const r of rows){
-      const norm={};Object.keys(r).forEach(k=>{norm[k.trim().toLowerCase().replace(/\s+/g,'_')]=r[k];});
-      const nombreB=String(norm['producto']||norm['producto_nombre']||norm['nombre']||'').trim();
-      const skuB=String(norm['sku']||'').trim();
-      const cantidad=Number(norm['cantidad']||1);
-      const prod=(prods||[]).find(p=>(skuB&&p.sku&&p.sku.trim().toLowerCase()===skuB.toLowerCase())||(nombreB&&p.nombre.trim().toLowerCase()===nombreB.toLowerCase()));
-      const {error}=await db.from('ventas').insert({
-        producto_id:prod?.id||null,producto_nombre:nombreB||'Sin nombre',cantidad,
-        precio_unitario:Number(norm['precio_unitario']||0),
-        costo_envio:Number(norm['envio_flex']||norm['costo_envio']||0),
-        envio_flex:Number(norm['envio_flex']||norm['costo_envio']||0),
-        comision_ml:Number(norm['comision_ml']||0),
-        otras_comisiones:Number(norm['otras_comisiones']||0),
-        costo_producto:prod?prod.costo*cantidad:Number(norm['costo_producto']||0),
-        canal:norm['canal']||'mostrador',fecha:parseExcelDate(norm['fecha']),notas:String(norm['notas']||'').trim(),
-      });
-      if(error){err++;errores.push(error.message);continue;}
-      ok++;
-      if(prod){await db.from('productos').update({stock:Math.max(0,prod.stock-cantidad)}).eq('id',prod.id);prod.stock=Math.max(0,prod.stock-cantidad);stockAct++;}
-    }
-    if(ok>0)load();
-    setImportMsg(ok>0?`✅ ${ok} importadas, ${stockAct} stocks actualizados${err>0?' | ⚠️ '+err+' errores: '+errores[0]:''}`:`❌ Error: ${errores[0]||'revisar formato'}`);
-  });
-
+  const {openPicker,Input}=useExcelImport(async(rows)=>{if(!rows||rows.length===0){setImportMsg('⚠️ Archivo vacío');return;}setImportMsg('Importando...');const {data:prods}=await db.from('productos').select('id,nombre,sku,stock,costo');let ok=0,err=0,stockAct=0,errores=[];for(const r of rows){const norm={};Object.keys(r).forEach(k=>{norm[k.trim().toLowerCase().replace(/\s+/g,'_')]=r[k];});const nombreB=String(norm['producto']||norm['producto_nombre']||norm['nombre']||'').trim();const skuB=String(norm['sku']||'').trim();const cantidad=Number(norm['cantidad']||1);const prod=(prods||[]).find(p=>(skuB&&p.sku&&p.sku.trim().toLowerCase()===skuB.toLowerCase())||(nombreB&&p.nombre.trim().toLowerCase()===nombreB.toLowerCase()));const {error}=await db.from('ventas').insert({producto_id:prod?.id||null,producto_nombre:nombreB||'Sin nombre',cantidad,precio_unitario:Number(norm['precio_unitario']||0),costo_envio:Number(norm['envio_flex']||norm['costo_envio']||0),envio_flex:Number(norm['envio_flex']||norm['costo_envio']||0),comision_ml:Number(norm['comision_ml']||0),otras_comisiones:Number(norm['otras_comisiones']||0),costo_producto:prod?prod.costo*cantidad:Number(norm['costo_producto']||0),canal:norm['canal']||'mostrador',fecha:parseExcelDate(norm['fecha']),notas:String(norm['notas']||'').trim()});if(error){err++;errores.push(error.message);continue;}ok++;if(prod){await db.from('productos').update({stock:Math.max(0,prod.stock-cantidad)}).eq('id',prod.id);prod.stock=Math.max(0,prod.stock-cantidad);stockAct++;}}if(ok>0)load();setImportMsg(ok>0?`✅ ${ok} importadas, ${stockAct} stocks actualizados${err>0?' | ⚠️ '+err+' errores':''}`:`❌ Error: ${errores[0]||'revisar formato'}`);});
   const filtered=filtroCanal?items.filter(x=>x.canal===filtroCanal):items;
-  const totalVentas  =filtered.reduce((a,x)=>a+Number(x.total||0),0);
-  const totalFlex    =filtered.reduce((a,x)=>a+Number(x.envio_flex||x.costo_envio||0),0);
-  const totalComML   =filtered.reduce((a,x)=>a+Number(x.comision_ml||0),0);
-  const totalCostP   =filtered.reduce((a,x)=>a+Number(x.costo_producto||0),0);
-  const cfProrr      =(filtered.length/(items.length||1))*costoFijo;
-  const totalEnMano  =totalVentas-totalFlex-totalComML-totalCostP-cfProrr;
-
+  const totalVentas=filtered.reduce((a,x)=>a+Number(x.total||0),0);
+  const totalFlex=filtered.reduce((a,x)=>a+Number(x.envio_flex||x.costo_envio||0),0);
+  const totalComML=filtered.reduce((a,x)=>a+Number(x.comision_ml||0),0);
+  const totalCostP=filtered.reduce((a,x)=>a+Number(x.costo_producto||0),0);
+  const cfProrr=(filtered.length/(items.length||1))*costoFijo;
+  const totalEnMano=totalVentas-totalFlex-totalComML-totalCostP-cfProrr;
   const prevIngreso=Number(form.cantidad||1)*Number(form.precio_unitario||0);
-  const prevFlex=Number(form.envio_flex||0);
-  const prevComML=Number(form.comision_ml||0);
-  const prevOtrasCom=Number(form.otras_comisiones||0);
-  const prevCostP=Number(form.costo_producto||0);
+  const prevFlex=Number(form.envio_flex||0);const prevComML=Number(form.comision_ml||0);
+  const prevOtrasCom=Number(form.otras_comisiones||0);const prevCostP=Number(form.costo_producto||0);
   const prevEnMano=prevIngreso-prevFlex-prevComML-prevOtrasCom-prevCostP;
-
-  return <>
+  return<>
     <Input/>
     <div className="page-header"><h2>💰 Ventas</h2></div>
     <div className="filters">
-      <select className="form-control" style={{width:160}} value={filtroCanal} onChange={e=>setFiltroCanal(e.target.value)}>
+      <select className="form-control" style={{maxWidth:160}} value={filtroCanal} onChange={e=>setFiltroCanal(e.target.value)}>
         <option value="">Todos los canales</option>
         {CANALES.map(c=><option key={c} value={c}>{CANAL_LABELS[c]}</option>)}
       </select>
-      <div style={{marginLeft:'auto',display:'flex',gap:8}}>
+      <div style={{marginLeft:'auto',display:'flex',gap:8,flexWrap:'wrap'}}>
         <button className="btn btn-secondary btn-sm" onClick={()=>descargarPlantilla('ventas',['producto','sku','cantidad','precio_unitario','envio_flex','comision_ml','otras_comisiones','canal','fecha','notas'])}>⬇ Plantilla</button>
         <button className="btn btn-yellow btn-sm" onClick={openPicker}>📥 Importar</button>
-        <button className="btn btn-primary" onClick={()=>setModal(true)}>+ Nueva</button>
+        <button className="btn btn-primary btn-sm" onClick={()=>setModal(true)}>+ Nueva</button>
       </div>
     </div>
-    <div className="cards-grid" style={{marginBottom:16}}>
+    <div className="cards-grid" style={{marginBottom:14}}>
       <div className="card"><div className="card-label">Ventas brutas</div><div className="card-value green">{fmt(totalVentas)}</div><div className="card-sub">{filtered.length} ventas</div></div>
-      <div className="card"><div className="card-label">Costo producto</div><div className="card-value red">{fmt(totalCostP)}</div></div>
-      <div className="card"><div className="card-label">Flex (envíos)</div><div className="card-value red">{fmt(totalFlex)}</div></div>
-      <div className="card"><div className="card-label">Comisiones ML</div><div className="card-value red">{fmt(totalComML)}</div></div>
-      <div className="card"><div className="card-label">Costo fijo (prorr.)</div><div className="card-value red">{fmt(cfProrr)}</div></div>
-      <div className="card"><div className="card-label">💵 Total en mano</div><div className={`card-value ${totalEnMano>=0?'green':'red'}`}>{fmt(totalEnMano)}</div></div>
+      <div className="card"><div className="card-label">Costo prod.</div><div className="card-value red">{fmt(totalCostP)}</div></div>
+      <div className="card"><div className="card-label">Flex</div><div className="card-value red">{fmt(totalFlex)}</div></div>
+      <div className="card"><div className="card-label">Com. ML</div><div className="card-value red">{fmt(totalComML)}</div></div>
+      <div className="card"><div className="card-label">C. Fijo prorr.</div><div className="card-value red">{fmt(cfProrr)}</div></div>
+      <div className="card"><div className="card-label">💵 En mano</div><div className={`card-value ${totalEnMano>=0?'green':'red'}`}>{fmt(totalEnMano)}</div></div>
     </div>
-    {importMsg&&<div className="alert alert-success" style={{marginBottom:12}}>{importMsg}</div>}
+    {importMsg&&<div className="alert alert-success">{importMsg}</div>}
     {loading?<div className="loading"><div className="spinner"/></div>:
-    <div className="table-wrap" style={{overflowX:'auto'}}><table>
-      <thead><tr><th>Fecha</th><th>Producto</th><th>Canal</th><th>Cant.</th><th>Precio</th><th>Costo prod.</th><th>Flex</th><th>Com. ML</th><th>En mano</th><th></th></tr></thead>
+    <div className="table-wrap"><table>
+      <thead><tr><th>Fecha</th><th>Producto</th><th>Canal</th><th>Precio</th><th>Flex</th><th>En mano</th><th></th></tr></thead>
       <tbody>
-        {filtered.length===0?<tr><td colSpan={10}><div className="empty">Sin ventas</div></td></tr>:
-        filtered.map(v=>{
-          const ing=Number(v.total||0),cp=Number(v.costo_producto||0),fl=Number(v.envio_flex||v.costo_envio||0),cm=Number(v.comision_ml||0),oc=Number(v.otras_comisiones||0);
-          const em=ing-cp-fl-cm-oc;
-          return <tr key={v.id}>
+        {filtered.length===0?<tr><td colSpan={7}><div className="empty">Sin ventas</div></td></tr>:
+        filtered.map(v=>{const ing=Number(v.total||0),cp=Number(v.costo_producto||0),fl=Number(v.envio_flex||v.costo_envio||0),cm=Number(v.comision_ml||0),oc=Number(v.otras_comisiones||0),em=ing-cp-fl-cm-oc;
+          return<tr key={v.id}>
             <td>{fmtDate(v.fecha)}</td>
-            <td style={{fontWeight:600,color:'#fff'}}>{v.producto_nombre||'-'}</td>
+            <td style={{fontWeight:600,color:'#fff',maxWidth:120,overflow:'hidden',textOverflow:'ellipsis'}}>{v.producto_nombre||'-'}</td>
             <td><Badge canal={v.canal}/></td>
-            <td>{v.cantidad}</td>
             <td style={{color:'#34d399',fontWeight:600}}>{fmt(v.precio_unitario)}</td>
-            <td style={{color:'#f87171'}}>{cp>0?fmt(cp):'-'}</td>
             <td style={{color:'#f87171'}}>{fl>0?fmt(fl):'-'}</td>
-            <td style={{color:'#f87171'}}>{cm>0?fmt(cm):'-'}</td>
             <td><span className={em>=0?'rentab-pos':'rentab-neg'}>{fmt(em)}</span></td>
             <td><button className="btn btn-danger btn-sm" onClick={()=>del(v.id)}>✕</button></td>
           </tr>;
@@ -550,12 +517,9 @@ function Ventas(){
       <h3>Nueva venta</h3>
       {msg&&<div className="alert alert-error">{msg}</div>}
       <div className="form-group"><label>Producto</label>
-        <select className="form-control" value={form.producto_id} onChange={e=>{
-          const p=productos.find(x=>x.id===e.target.value);
-          setForm({...form,producto_id:e.target.value,costo_producto:p?p.costo:form.costo_producto});
-        }}>
+        <select className="form-control" value={form.producto_id} onChange={e=>{const p=productos.find(x=>x.id===e.target.value);setForm({...form,producto_id:e.target.value,costo_producto:p?p.costo:form.costo_producto});}}>
           <option value="">— Manual —</option>
-          {productos.map(p=><option key={p.id} value={p.id}>{p.nombre} — SKU:{p.sku||'?'} (stock:{p.stock})</option>)}
+          {productos.map(p=><option key={p.id} value={p.id}>{p.nombre} (SKU:{p.sku||'?'} | stock:{p.stock})</option>)}
         </select>
       </div>
       {!form.producto_id&&<div className="form-group"><label>Nombre manual</label><input className="form-control" value={form.producto_nombre} onChange={e=>setForm({...form,producto_nombre:e.target.value})}/></div>}
@@ -567,7 +531,7 @@ function Ventas(){
         <div className="form-group"><label>Costo producto ($)</label><input type="number" className="form-control" value={form.costo_producto} onChange={e=>setForm({...form,costo_producto:e.target.value})} placeholder="Auto por SKU"/></div>
         <div className="form-group"><label>Comisión ML ($)</label><input type="number" className="form-control" value={form.comision_ml} onChange={e=>setForm({...form,comision_ml:e.target.value})}/></div>
       </div>
-      <div className="form-group"><label>Otras comisiones ($)</label><input type="number" className="form-control" value={form.otras_comisiones} onChange={e=>setForm({...form,otras_comisiones:e.target.value})} placeholder="Ej: Tienda Nube, etc."/></div>
+      <div className="form-group"><label>Otras comisiones ($)</label><input type="number" className="form-control" value={form.otras_comisiones} onChange={e=>setForm({...form,otras_comisiones:e.target.value})} placeholder="Ej: Tienda Nube"/></div>
       <div className="form-group">
         <label>🚚 Envío Flex</label>
         <FlexSelector value={form.envio_flex} onChange={v=>setForm({...form,envio_flex:v})} tipos={flexTipos}/>
@@ -581,12 +545,12 @@ function Ventas(){
         <div className="form-group"><label>Fecha</label><input type="date" className="form-control" value={form.fecha} onChange={e=>setForm({...form,fecha:e.target.value})}/></div>
       </div>
       {form.precio_unitario>0&&<div className="alert alert-success" style={{marginBottom:8}}>
-        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:4,fontSize:12}}>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:3,fontSize:12}}>
           <span>Ingreso bruto:</span><span style={{fontWeight:700}}>{fmt(prevIngreso)}</span>
-          <span>— Costo producto:</span><span style={{color:'#f87171'}}>- {fmt(prevCostP)}</span>
+          <span>— Costo prod.:</span><span style={{color:'#f87171'}}>- {fmt(prevCostP)}</span>
           <span>— Flex:</span><span style={{color:'#f87171'}}>- {fmt(prevFlex)}</span>
           <span>— Com. ML:</span><span style={{color:'#f87171'}}>- {fmt(prevComML)}</span>
-          {prevOtrasCom>0&&<><span>— Otras com.:</span><span style={{color:'#f87171'}}>- {fmt(prevOtrasCom)}</span></>}
+          {prevOtrasCom>0&&<><span>— Otras:</span><span style={{color:'#f87171'}}>- {fmt(prevOtrasCom)}</span></>}
           <span style={{fontWeight:700,borderTop:'1px solid #065f46',paddingTop:4}}>💵 En mano:</span>
           <span style={{fontWeight:700,color:prevEnMano>=0?'#34d399':'#f87171',borderTop:'1px solid #065f46',paddingTop:4}}>{fmt(prevEnMano)}</span>
         </div>
@@ -601,83 +565,42 @@ function Ventas(){
 
 // ===== GASTOS =====
 function Gastos(){
-  const [items,setItems]=React.useState([]);
-  const [costoFijo,setCostoFijo]=React.useState(0);
-  const [editCF,setEditCF]=React.useState(false);
-  const [newCF,setNewCF]=React.useState(0);
-  const [loading,setLoading]=React.useState(true);
-  const [modal,setModal]=React.useState(false);
-  const [form,setForm]=React.useState({descripcion:'',monto:0,categoria:'',fecha:today(),notas:''});
-  const [msg,setMsg]=React.useState('');
-  const [importMsg,setImportMsg]=React.useState('');
+  const [items,setItems]=React.useState([]);const [costoFijo,setCostoFijo]=React.useState(0);const [editCF,setEditCF]=React.useState(false);const [newCF,setNewCF]=React.useState(0);
+  const [loading,setLoading]=React.useState(true);const [modal,setModal]=React.useState(false);
+  const [form,setForm]=React.useState({descripcion:'',monto:0,categoria:'',fecha:today(),notas:''});const [msg,setMsg]=React.useState('');const [importMsg,setImportMsg]=React.useState('');
   const CATS=['Envíos','Comisiones','Publicidad','Alquiler','Servicios','Personal','Otros'];
-
-  const load=async()=>{
-    setLoading(true);
-    const [{data:g},{data:s}]=await Promise.all([
-      db.from('gastos').select('*').order('fecha',{ascending:false}),
-      db.from('settings').select('costo_operativo_fijo_mensual').eq('id',1).single(),
-    ]);
-    setItems(g||[]);
-    setCostoFijo(Number(s?.costo_operativo_fijo_mensual||0));
-    setLoading(false);
-  };
+  const load=async()=>{setLoading(true);const [{data:g},{data:s}]=await Promise.all([db.from('gastos').select('*').order('fecha',{ascending:false}),db.from('settings').select('costo_operativo_fijo_mensual').eq('id',1).single()]);setItems(g||[]);setCostoFijo(Number(s?.costo_operativo_fijo_mensual||0));setLoading(false);};
   React.useEffect(()=>{load()},[]);
-
-  const saveCF=async()=>{
-    await saveSettings({costo_operativo_fijo_mensual:Number(newCF)});
-    setEditCF(false);load();
-  };
-  const save=async()=>{
-    if(!form.descripcion||!form.monto){setMsg('Completá descripción y monto');return;}
-    await db.from('gastos').insert({...form,monto:Number(form.monto)});
-    setModal(false);setMsg('');setForm({descripcion:'',monto:0,categoria:'',fecha:today(),notas:''});load();
-  };
+  const saveCF=async()=>{await saveSettings({costo_operativo_fijo_mensual:Number(newCF)});setEditCF(false);load();};
+  const save=async()=>{if(!form.descripcion||!form.monto){setMsg('Completá descripción y monto');return;}await db.from('gastos').insert({...form,monto:Number(form.monto)});setModal(false);setMsg('');setForm({descripcion:'',monto:0,categoria:'',fecha:today(),notas:''});load();};
   const del=async(id)=>{if(!confirm('¿Eliminar?'))return;await db.from('gastos').delete().eq('id',id);load();};
-  const {openPicker,Input}=useExcelImport(async(rows)=>{
-    setImportMsg('Importando...');let ok=0;
-    for(const r of rows){
-      await db.from('gastos').insert({descripcion:r['descripcion']||r['Descripción']||'Sin descripción',monto:Number(r['monto']||r['Monto']||0),categoria:r['categoria']||r['Categoría']||'',fecha:parseExcelDate(r['fecha']||r['Fecha']),notas:r['notas']||''});ok++;
-    }
-    setImportMsg(`✅ ${ok} gastos importados`);load();
-  });
-
+  const {openPicker,Input}=useExcelImport(async(rows)=>{setImportMsg('Importando...');let ok=0;for(const r of rows){await db.from('gastos').insert({descripcion:r['descripcion']||r['Descripción']||'Sin descripción',monto:Number(r['monto']||r['Monto']||0),categoria:r['categoria']||r['Categoría']||'',fecha:parseExcelDate(r['fecha']||r['Fecha']),notas:r['notas']||''});ok++;}setImportMsg(`✅ ${ok} gastos importados`);load();});
   const total=items.reduce((a,x)=>a+Number(x.monto),0);
-  return <>
+  return<>
     <Input/>
     <div className="page-header"><h2>💸 Gastos</h2></div>
-    <div className="card" style={{marginBottom:20,maxWidth:440}}>
+    <div className="card" style={{marginBottom:16,maxWidth:440}}>
       <div className="card-label" style={{marginBottom:8}}>⚙️ Costo fijo operativo mensual</div>
-      {editCF
-        ?<div style={{display:'flex',gap:8,alignItems:'center'}}>
-            <input type="number" className="form-control" value={newCF} onChange={e=>setNewCF(e.target.value)} style={{flex:1}}/>
-            <button className="btn btn-primary btn-sm" onClick={saveCF}>Guardar</button>
-            <button className="btn btn-secondary btn-sm" onClick={()=>setEditCF(false)}>✕</button>
-          </div>
-        :<div style={{display:'flex',alignItems:'center',gap:12}}>
-            <span style={{fontSize:22,fontWeight:700,color:'#f87171'}}>{fmt(costoFijo)}</span>
-            <button className="btn btn-secondary btn-sm" onClick={()=>{setNewCF(costoFijo);setEditCF(true);}}>Editar</button>
-          </div>
-      }
-      <div style={{fontSize:11,color:'#5b6396',marginTop:6}}>Guardado en Supabase — se descuenta en el Dashboard</div>
+      {editCF?<div style={{display:'flex',gap:8,alignItems:'center'}}><input type="number" className="form-control" value={newCF} onChange={e=>setNewCF(e.target.value)} style={{flex:1}}/><button className="btn btn-primary btn-sm" onClick={saveCF}>Guardar</button><button className="btn btn-secondary btn-sm" onClick={()=>setEditCF(false)}>✕</button></div>
+        :<div style={{display:'flex',alignItems:'center',gap:12}}><span style={{fontSize:22,fontWeight:700,color:'#f87171'}}>{fmt(costoFijo)}</span><button className="btn btn-secondary btn-sm" onClick={()=>{setNewCF(costoFijo);setEditCF(true);}}>Editar</button></div>}
+      <div style={{fontSize:11,color:'#5b6396',marginTop:6}}>Guardado en Supabase — se descuenta en Dashboard</div>
     </div>
     <div className="section-header">
-      <span style={{color:'#f87171',fontWeight:700}}>Total gastos: {fmt(total)}</span>
-      <div style={{display:'flex',gap:8}}>
+      <span style={{color:'#f87171',fontWeight:700}}>Total: {fmt(total)}</span>
+      <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
         <button className="btn btn-secondary btn-sm" onClick={()=>descargarPlantilla('gastos',['descripcion','monto','categoria','fecha','notas'])}>⬇ Plantilla</button>
         <button className="btn btn-yellow btn-sm" onClick={openPicker}>📥 Importar</button>
-        <button className="btn btn-primary" onClick={()=>setModal(true)}>+ Nuevo</button>
+        <button className="btn btn-primary btn-sm" onClick={()=>setModal(true)}>+ Nuevo</button>
       </div>
     </div>
-    {importMsg&&<div className="alert alert-success" style={{marginBottom:12}}>{importMsg}</div>}
+    {importMsg&&<div className="alert alert-success">{importMsg}</div>}
     {loading?<div className="loading"><div className="spinner"/></div>:
     <div className="table-wrap"><table>
       <thead><tr><th>Fecha</th><th>Descripción</th><th>Categoría</th><th>Monto</th><th></th></tr></thead>
       <tbody>
         {items.length===0?<tr><td colSpan={5}><div className="empty">Sin gastos</div></td></tr>:
         items.map(g=><tr key={g.id}>
-          <td>{fmtDate(g.fecha)}</td>
-          <td style={{fontWeight:600,color:'#fff'}}>{g.descripcion}</td>
+          <td>{fmtDate(g.fecha)}</td><td style={{fontWeight:600,color:'#fff'}}>{g.descripcion}</td>
           <td>{g.categoria?<span className="badge badge-gray">{g.categoria}</span>:'-'}</td>
           <td style={{color:'#f87171',fontWeight:600}}>{fmt(g.monto)}</td>
           <td><button className="btn btn-danger btn-sm" onClick={()=>del(g.id)}>✕</button></td>
@@ -690,60 +613,31 @@ function Gastos(){
       <div className="form-group"><label>Descripción *</label><input className="form-control" value={form.descripcion} onChange={e=>setForm({...form,descripcion:e.target.value})}/></div>
       <div className="form-row">
         <div className="form-group"><label>Monto ($)</label><input type="number" className="form-control" value={form.monto} onChange={e=>setForm({...form,monto:e.target.value})}/></div>
-        <div className="form-group"><label>Categoría</label>
-          <select className="form-control" value={form.categoria} onChange={e=>setForm({...form,categoria:e.target.value})}>
-            <option value="">Sin categoría</option>{CATS.map(c=><option key={c} value={c}>{c}</option>)}
-          </select>
-        </div>
+        <div className="form-group"><label>Categoría</label><select className="form-control" value={form.categoria} onChange={e=>setForm({...form,categoria:e.target.value})}><option value="">Sin categoría</option>{CATS.map(c=><option key={c} value={c}>{c}</option>)}</select></div>
       </div>
       <div className="form-group"><label>Fecha</label><input type="date" className="form-control" value={form.fecha} onChange={e=>setForm({...form,fecha:e.target.value})}/></div>
-      <div style={{display:'flex',gap:10}}>
-        <button className="btn btn-primary" style={{flex:1}} onClick={save}>Guardar</button>
-        <button className="btn btn-secondary" onClick={()=>{setModal(false);setMsg('');}}>Cancelar</button>
-      </div>
+      <div style={{display:'flex',gap:10}}><button className="btn btn-primary" style={{flex:1}} onClick={save}>Guardar</button><button className="btn btn-secondary" onClick={()=>{setModal(false);setMsg('');}}>Cancelar</button></div>
     </Modal>}
   </>;
 }
 
 // ===== PRECIOS =====
 function Precios(){
-  const [productos,setProductos]=React.useState([]);
-  const [precios,setPrecios]=React.useState([]);
-  const [loading,setLoading]=React.useState(true);
-  const [modal,setModal]=React.useState(false);
-  const [selProd,setSelProd]=React.useState(null);
-  const [formPrecios,setFormPrecios]=React.useState({});
-  const [importMsg,setImportMsg]=React.useState('');
+  const [productos,setProductos]=React.useState([]);const [precios,setPrecios]=React.useState([]);const [loading,setLoading]=React.useState(true);
+  const [modal,setModal]=React.useState(false);const [selProd,setSelProd]=React.useState(null);const [formPrecios,setFormPrecios]=React.useState({});const [importMsg,setImportMsg]=React.useState('');
   const load=async()=>{setLoading(true);const [{data:p},{data:pc}]=await Promise.all([db.from('productos').select('*').order('nombre'),db.from('precios_canal').select('*')]);setProductos(p||[]);setPrecios(pc||[]);setLoading(false);};
   React.useEffect(()=>{load()},[]);
   const openModal=prod=>{setSelProd(prod);const fp={};CANALES.forEach(c=>{const pc=precios.find(x=>x.producto_id===prod.id&&x.canal===c);fp[c]=pc?pc.precio:0;});setFormPrecios(fp);setModal(true);};
   const save=async()=>{for(const canal of CANALES){const ex=precios.find(x=>x.producto_id===selProd.id&&x.canal===canal);if(ex)await db.from('precios_canal').update({precio:Number(formPrecios[canal]),updated_at:new Date().toISOString()}).eq('id',ex.id);else await db.from('precios_canal').insert({producto_id:selProd.id,canal,precio:Number(formPrecios[canal])});}setModal(false);load();};
   const getPrecio=(pid,canal)=>{const pc=precios.find(x=>x.producto_id===pid&&x.canal===canal);return pc?fmt(pc.precio):'-';};
-  const {openPicker,Input}=useExcelImport(async(rows)=>{
-    setImportMsg('Importando...');let ok=0;
-    for(const r of rows){
-      const nombre=r['producto']||r['Producto']||'';
-      const prod=productos.find(p=>p.nombre.toLowerCase()===nombre.toLowerCase());
-      if(!prod)continue;
-      for(const canal of CANALES){
-        const precio=Number(r[canal]||r[CANAL_LABELS[canal]]||0);if(!precio)continue;
-        const ex=precios.find(x=>x.producto_id===prod.id&&x.canal===canal);
-        if(ex)await db.from('precios_canal').update({precio,updated_at:new Date().toISOString()}).eq('id',ex.id);
-        else await db.from('precios_canal').insert({producto_id:prod.id,canal,precio});ok++;
-      }
-    }
-    setImportMsg(`✅ ${ok} precios actualizados`);load();
-  });
-  return <>
+  const {openPicker,Input}=useExcelImport(async(rows)=>{setImportMsg('Importando...');let ok=0;for(const r of rows){const nombre=r['producto']||r['Producto']||'';const prod=productos.find(p=>p.nombre.toLowerCase()===nombre.toLowerCase());if(!prod)continue;for(const canal of CANALES){const precio=Number(r[canal]||r[CANAL_LABELS[canal]]||0);if(!precio)continue;const ex=precios.find(x=>x.producto_id===prod.id&&x.canal===canal);if(ex)await db.from('precios_canal').update({precio,updated_at:new Date().toISOString()}).eq('id',ex.id);else await db.from('precios_canal').insert({producto_id:prod.id,canal,precio});ok++;}}setImportMsg(`✅ ${ok} precios actualizados`);load();});
+  return<>
     <Input/>
     <div className="page-header"><h2>🏷️ Precios por canal</h2></div>
     <div className="section-header"><span/>
-      <div style={{display:'flex',gap:8}}>
-        <button className="btn btn-secondary btn-sm" onClick={()=>descargarPlantilla('precios',['producto','mercadolibre','tiendanube','instagram','whatsapp','mostrador'])}>⬇ Plantilla</button>
-        <button className="btn btn-yellow btn-sm" onClick={openPicker}>📥 Importar</button>
-      </div>
+      <div style={{display:'flex',gap:8}}><button className="btn btn-secondary btn-sm" onClick={()=>descargarPlantilla('precios',['producto','mercadolibre','tiendanube','instagram','whatsapp','mostrador'])}>⬇ Plantilla</button><button className="btn btn-yellow btn-sm" onClick={openPicker}>📥 Importar</button></div>
     </div>
-    {importMsg&&<div className="alert alert-success" style={{marginBottom:12}}>{importMsg}</div>}
+    {importMsg&&<div className="alert alert-success">{importMsg}</div>}
     {loading?<div className="loading"><div className="spinner"/></div>:
     <div className="table-wrap"><table>
       <thead><tr><th>Producto</th><th>Costo</th>{CANALES.map(c=><th key={c}>{CANAL_LABELS[c]}</th>)}<th></th></tr></thead>
@@ -758,58 +652,44 @@ function Precios(){
     </table></div>}
     {modal&&selProd&&<Modal onClose={()=>setModal(false)}>
       <h3>Precios — {selProd.nombre}</h3>
-      <div className="alert alert-success" style={{marginBottom:16}}>Costo: {fmt(selProd.costo)}</div>
+      <div className="alert alert-success" style={{marginBottom:14}}>Costo: {fmt(selProd.costo)}</div>
       {CANALES.map(c=>{const precio=Number(formPrecios[c]||0);const margen=selProd.costo>0?((precio-selProd.costo)/selProd.costo*100).toFixed(1):0;
-        return <div className="form-group" key={c}>
+        return<div className="form-group" key={c}>
           <label>{CANAL_LABELS[c]} {precio>0&&<span style={{color:margen>0?'#34d399':'#f87171',fontSize:11,fontWeight:600}}>({margen>0?'+':''}{margen}%)</span>}</label>
           <input type="number" className="form-control" value={formPrecios[c]||0} onChange={e=>setFormPrecios({...formPrecios,[c]:e.target.value})}/>
         </div>;
       })}
-      <div style={{display:'flex',gap:10}}>
-        <button className="btn btn-primary" style={{flex:1}} onClick={save}>Guardar</button>
-        <button className="btn btn-secondary" onClick={()=>setModal(false)}>Cancelar</button>
-      </div>
+      <div style={{display:'flex',gap:10}}><button className="btn btn-primary" style={{flex:1}} onClick={save}>Guardar</button><button className="btn btn-secondary" onClick={()=>setModal(false)}>Cancelar</button></div>
     </Modal>}
   </>;
 }
 
 // ===== STOCK EN VIVO =====
 function StockVivo(){
-  const [items,setItems]=React.useState([]);
-  const [loading,setLoading]=React.useState(true);
-  const [lastUpdate,setLastUpdate]=React.useState(null);
+  const [items,setItems]=React.useState([]);const [loading,setLoading]=React.useState(true);const [lastUpdate,setLastUpdate]=React.useState(null);
   const load=async()=>{const {data}=await db.from('productos').select('*').order('nombre');setItems(data||[]);setLastUpdate(new Date());setLoading(false);};
-  React.useEffect(()=>{
-    load();
-    const ch=db.channel('stock-rt').on('postgres_changes',{event:'*',schema:'public',table:'productos'},()=>load()).on('postgres_changes',{event:'INSERT',schema:'public',table:'ventas'},()=>load()).on('postgres_changes',{event:'INSERT',schema:'public',table:'compras'},()=>load()).subscribe();
-    return()=>db.removeChannel(ch);
-  },[]);
-  const stockTotal=items.reduce((a,x)=>a+x.stock,0);
-  const bajoStock=items.filter(x=>x.stock<=x.stock_minimo&&x.stock>0);
-  const sinStock=items.filter(x=>x.stock===0);
-  return <>
+  React.useEffect(()=>{load();const ch=db.channel('stock-rt').on('postgres_changes',{event:'*',schema:'public',table:'productos'},()=>load()).on('postgres_changes',{event:'INSERT',schema:'public',table:'ventas'},()=>load()).on('postgres_changes',{event:'INSERT',schema:'public',table:'compras'},()=>load()).subscribe();return()=>db.removeChannel(ch);},[]);
+  const stockTotal=items.reduce((a,x)=>a+x.stock,0);const bajoStock=items.filter(x=>x.stock<=x.stock_minimo&&x.stock>0);const sinStock=items.filter(x=>x.stock===0);
+  return<>
     <div className="page-header"><h2>📡 Stock en vivo</h2><p><span className="live-dot"/>Tiempo real{lastUpdate&&` — ${lastUpdate.toLocaleTimeString('es-AR')}`}</p></div>
-    <div className="cards-grid" style={{marginBottom:20}}>
-      <div className="card"><div className="card-label">Total productos</div><div className="card-value blue">{items.length}</div></div>
-      <div className="card"><div className="card-label">Unidades totales</div><div className="card-value green">{stockTotal}</div></div>
+    <div className="cards-grid" style={{marginBottom:16}}>
+      <div className="card"><div className="card-label">Productos</div><div className="card-value blue">{items.length}</div></div>
+      <div className="card"><div className="card-label">Unidades</div><div className="card-value green">{stockTotal}</div></div>
       <div className="card"><div className="card-label">Stock bajo</div><div className={`card-value ${bajoStock.length>0?'yellow':'green'}`}>{bajoStock.length}</div></div>
       <div className="card"><div className="card-label">Sin stock</div><div className={`card-value ${sinStock.length>0?'red':'green'}`}>{sinStock.length}</div></div>
     </div>
     {loading?<div className="loading"><div className="spinner"/></div>:
     <div className="table-wrap"><table>
-      <thead><tr><th>Producto</th><th>SKU</th><th>Categoría</th><th>Stock actual</th><th>Stock mínimo</th><th>Estado</th><th>Costo</th></tr></thead>
+      <thead><tr><th>Producto</th><th>SKU</th><th>Stock</th><th>Mín.</th><th>Estado</th></tr></thead>
       <tbody>
-        {items.length===0?<tr><td colSpan={7}><div className="empty">Sin productos</div></td></tr>:
-        items.map(p=>{
-          const estado=p.stock===0?{label:'Sin stock',cls:'badge-red'}:p.stock<=p.stock_minimo?{label:'Stock bajo',cls:'badge-yellow'}:{label:'OK',cls:'badge-green'};
-          return <tr key={p.id}>
+        {items.length===0?<tr><td colSpan={5}><div className="empty">Sin productos</div></td></tr>:
+        items.map(p=>{const estado=p.stock===0?{label:'Sin stock',cls:'badge-red'}:p.stock<=p.stock_minimo?{label:'Bajo',cls:'badge-yellow'}:{label:'OK',cls:'badge-green'};
+          return<tr key={p.id}>
             <td style={{fontWeight:600,color:'#fff'}}>{p.nombre}</td>
             <td style={{color:'#5b6396'}}>{p.sku||'-'}</td>
-            <td>{p.categoria||'-'}</td>
-            <td><span className={p.stock===0?'stock-zero':p.stock<=p.stock_minimo?'stock-low':'stock-ok'} style={{fontSize:16,fontWeight:700}}>{p.stock}</span> u.</td>
-            <td style={{color:'#5b6396'}}>{p.stock_minimo} u.</td>
+            <td><span className={p.stock===0?'stock-zero':p.stock<=p.stock_minimo?'stock-low':'stock-ok'} style={{fontWeight:700}}>{p.stock}u</span></td>
+            <td style={{color:'#5b6396'}}>{p.stock_minimo}u</td>
             <td><span className={`badge ${estado.cls}`}>{estado.label}</span></td>
-            <td>{fmt(p.costo)}</td>
           </tr>;
         })}
       </tbody>
@@ -817,18 +697,21 @@ function StockVivo(){
   </>;
 }
 
-// ===== CONFIGURACIÓN (Flex + Token ML) =====
+// ===== CONFIGURACIÓN =====
 function Configuracion(){
   const [tipos,setTipos]=React.useState(DEFAULT_FLEX_TIPOS);
-  const [token,setToken]=React.useState('');
-  const [tokenMasked,setTokenMasked]=React.useState(false);
-  const [loading,setLoading]=React.useState(true);
-  const [saving,setSaving]=React.useState(false);
-  const [msg,setMsg]=React.useState('');
-  const [msgType,setMsgType]=React.useState('success');
+  const [token,setToken]=React.useState('');const [tokenMasked,setTokenMasked]=React.useState(false);
+  const [loading,setLoading]=React.useState(true);const [saving,setSaving]=React.useState(false);
+  const [msg,setMsg]=React.useState('');const [msgType,setMsgType]=React.useState('success');
+  const BASE=window.location.origin;
+  const ML_CLIENT_ID=null; // se lee desde las env vars en el server
 
   const load=async()=>{
     setLoading(true);
+    // Detectar si volvimos del OAuth
+    const p=new URLSearchParams(window.location.search);
+    if(p.get('ml_connected')==='1'){window.history.replaceState({},'',window.location.pathname);setMsg('✅ ¡Conectado! Token guardado en Supabase.');setMsgType('success');}
+    if(p.get('ml_error')){window.history.replaceState({},'',window.location.pathname);setMsg('❌ Error ML: '+p.get('ml_error')+(p.get('detail')?' — '+p.get('detail'):''));setMsgType('error');}
     const s=await getSettings();
     if(s.flex_tipos)setTipos(s.flex_tipos);
     if(s.ml_access_token){setToken(s.ml_access_token);setTokenMasked(true);}
@@ -836,9 +719,7 @@ function Configuracion(){
   };
   React.useEffect(()=>{load()},[]);
 
-  const updateTipo=(idx,field,val)=>{
-    const t=[...tipos];t[idx]={...t[idx],[field]:field==='costo'?Number(val):val};setTipos(t);
-  };
+  const updateTipo=(idx,field,val)=>{const t=[...tipos];t[idx]={...t[idx],[field]:field==='costo'?Number(val):val};setTipos(t);};
 
   const guardar=async()=>{
     setSaving(true);
@@ -848,54 +729,68 @@ function Configuracion(){
     setTimeout(()=>setMsg(''),3000);
   };
 
-  if(loading)return <div className="loading"><div className="spinner"/></div>;
+  const conectarML=()=>{
+    // Redirigir al flujo OAuth de ML
+    window.location.href=`${BASE}/api/ml-auth`;
+  };
 
-  return <>
-    <div className="page-header"><h2>⚙️ Configuración</h2><p>Guardado en Supabase — disponible en todos los dispositivos</p></div>
+  if(loading)return<div className="loading"><div className="spinner"/></div>;
+
+  return<>
+    <div className="page-header"><h2>⚙️ Configuración</h2><p>Todo guardado en Supabase — disponible en todos los dispositivos</p></div>
     {msg&&<div className={`alert alert-${msgType}`}>{msg}</div>}
 
-    <div className="card" style={{marginBottom:20,maxWidth:580}}>
-      <div className="card-label" style={{marginBottom:16}}>🔑 Access Token — Mercado Libre</div>
+    {/* Token ML */}
+    <div className="card" style={{marginBottom:16,maxWidth:560}}>
+      <div className="card-label" style={{marginBottom:14}}>🟡 Mercado Libre — Conexión</div>
+
+      {/* Botón OAuth — forma principal */}
+      <button className="btn btn-ml btn-full-mobile" style={{marginBottom:14,fontSize:14,padding:'12px 20px'}} onClick={conectarML}>
+        🔐 Conectar con Mercado Libre
+      </button>
+      <div style={{fontSize:12,color:'#5b6396',marginBottom:14}}>
+        Abre el login de ML, autorizás la app y el token se guarda automáticamente. Hacelo una vez y queda guardado.
+      </div>
+
+      {/* Divider */}
+      <div style={{display:'flex',alignItems:'center',gap:10,marginBottom:14}}>
+        <div style={{flex:1,height:1,background:'#1e2340'}}/>
+        <span style={{fontSize:11,color:'#5b6396'}}>o ingresá el token manualmente</span>
+        <div style={{flex:1,height:1,background:'#1e2340'}}/>
+      </div>
+
       <div className="form-group">
-        <label>Token</label>
+        <label>Access Token manual</label>
         <div style={{display:'flex',gap:8}}>
-          <input
-            type={tokenMasked?'password':'text'}
-            className="form-control"
-            value={token}
+          <input type={tokenMasked?'password':'text'} className="form-control" value={token}
             onChange={e=>{setToken(e.target.value);setTokenMasked(false);}}
-            placeholder="APP_USR-xxxxxxxxxx..."
-            style={{flex:1}}
-          />
+            placeholder="APP_USR-xxxxxxxxxx..." style={{flex:1}}/>
           {tokenMasked&&<button className="btn btn-secondary btn-sm" onClick={()=>setTokenMasked(false)}>Ver</button>}
         </div>
-        <div style={{fontSize:11,color:'#5b6396',marginTop:6}}>
-          Obtenelo desde Mercado Libre Developers → Tu app → Credenciales
+        <div style={{fontSize:11,color:'#5b6396',marginTop:5}}>
+          Desde ML Developers → Tu app → Credenciales. Expira cada 6 hs.
         </div>
       </div>
     </div>
 
-    <div className="card" style={{maxWidth:580,marginBottom:20}}>
-      <div className="card-label" style={{marginBottom:16}}>🚚 Tipos de Envío Flex</div>
+    {/* Tipos Flex */}
+    <div className="card" style={{maxWidth:560,marginBottom:16}}>
+      <div className="card-label" style={{marginBottom:14}}>🚚 Tipos de Envío Flex</div>
       {tipos.map((t,i)=>(
-        <div key={t.id} style={{display:'flex',gap:10,alignItems:'flex-end',marginBottom:12}}>
+        <div key={t.id} style={{display:'flex',gap:10,alignItems:'flex-end',marginBottom:10}}>
           <div style={{flex:2}}>
             {i===0&&<label style={{display:'block',fontSize:11,color:'#5b6396',marginBottom:4,textTransform:'uppercase',letterSpacing:'.5px'}}>Nombre</label>}
-            <input className="form-control" value={t.label} onChange={e=>updateTipo(i,'label',e.target.value)} placeholder={`Ej: Flex Cerca`}/>
+            <input className="form-control" value={t.label} onChange={e=>updateTipo(i,'label',e.target.value)} placeholder="Ej: Flex Cerca"/>
           </div>
           <div style={{flex:1}}>
             {i===0&&<label style={{display:'block',fontSize:11,color:'#5b6396',marginBottom:4,textTransform:'uppercase',letterSpacing:'.5px'}}>Costo ($)</label>}
             <input type="number" className="form-control" value={t.costo} onChange={e=>updateTipo(i,'costo',e.target.value)}/>
           </div>
-          <div style={{width:90,paddingBottom:1}}>
-            {i===0&&<div style={{fontSize:11,color:'#5b6396',marginBottom:4,textTransform:'uppercase',letterSpacing:'.5px'}}>Vista previa</div>}
-            <div className="flex-btn" style={{fontSize:11}}>{t.label||'—'}<br/><span style={{opacity:.7}}>{fmt(t.costo)}</span></div>
-          </div>
         </div>
       ))}
     </div>
 
-    <button className="btn btn-primary" style={{minWidth:200}} onClick={guardar} disabled={saving}>
+    <button className="btn btn-primary btn-full-mobile" style={{minWidth:200}} onClick={guardar} disabled={saving}>
       {saving?<><div className="spinner"/>&nbsp;Guardando...</>:'💾 Guardar configuración'}
     </button>
   </>;
@@ -903,42 +798,29 @@ function Configuracion(){
 
 // ===== MERCADO LIBRE =====
 function MercadoLibre(){
-  const [token,setToken]=React.useState('');
-  const [conectado,setConectado]=React.useState(false);
-  const [orders,setOrders]=React.useState([]);
-  const [loading,setLoading]=React.useState(false);
-  const [importing,setImporting]=React.useState(false);
-  const [progress,setProgress]=React.useState(null);
-  const [msg,setMsg]=React.useState('');
-  const [msgType,setMsgType]=React.useState('success');
+  const [token,setToken]=React.useState('');const [conectado,setConectado]=React.useState(false);
+  const [orders,setOrders]=React.useState([]);const [loading,setLoading]=React.useState(false);
+  const [importing,setImporting]=React.useState(false);const [progress,setProgress]=React.useState(null);
+  const [msg,setMsg]=React.useState('');const [msgType,setMsgType]=React.useState('success');
   const BASE=window.location.origin;
-
   const showMsg=(m,t='success')=>{setMsg(m);setMsgType(t);};
 
-  // Cargar token desde Supabase
   React.useEffect(()=>{
-    (async()=>{
-      const s=await getSettings();
-      if(s.ml_access_token){setToken(s.ml_access_token);verificarToken(s.ml_access_token);}
-    })();
+    (async()=>{const s=await getSettings();if(s.ml_access_token){setToken(s.ml_access_token);verificarToken(s.ml_access_token);}})();
   },[]);
 
   const verificarToken=async(t)=>{
-    try{
-      const r=await fetch('https://api.mercadolibre.com/users/me',{headers:{Authorization:`Bearer ${t}`}});
-      const d=await r.json();
+    try{const r=await fetch('https://api.mercadolibre.com/users/me',{headers:{Authorization:`Bearer ${t}`}});const d=await r.json();
       if(d.id){setConectado(true);showMsg(`✓ Conectado como ${d.nickname||d.id}`);}
-      else{setConectado(false);showMsg('Token inválido o expirado. Actualizalo en ⚙️ Configuración','error');}
+      else{setConectado(false);showMsg('Token inválido — usá el botón OAuth en ⚙️ Configuración','error');}
     }catch{setConectado(false);showMsg('No se pudo verificar el token','error');}
   };
 
   const traerOrdenes=async()=>{
     setLoading(true);setMsg('');
-    try{
-      const r=await fetch(`${BASE}/api/ml-orders?list=1&token=${encodeURIComponent(token)}`);
-      const d=await r.json();
+    try{const r=await fetch(`${BASE}/api/ml-orders?list=1&token=${encodeURIComponent(token)}`);const d=await r.json();
       if(d.error){setConectado(false);showMsg('Error: '+d.error+(d.detail?' — '+d.detail:''),'error');setOrders([]);}
-      else{setOrders(d.orders||[]);showMsg(`${d.orders?.length||0} órdenes encontradas (${d.total} en total)`);}
+      else{setOrders(d.orders||[]);showMsg(`${d.orders?.length||0} órdenes (${d.total} total)`);}
     }catch(e){showMsg('Error de conexión: '+e.message,'error');}
     setLoading(false);
   };
@@ -948,33 +830,14 @@ function MercadoLibre(){
     setImporting(true);setMsg('');setProgress({done:0,total:orders.length});
     const {data:prods}=await db.from('productos').select('id,sku,costo,stock,nombre');
     let imp=0,dup=0,stockAct=0;
-
     for(const order of orders){
       const {data:ex}=await db.from('ventas').select('id').eq('ml_order_id',String(order.id)).limit(1);
       if(ex&&ex.length>0){dup++;setProgress({done:imp+dup,total:orders.length});continue;}
-
       for(const item of order.order_items||[]){
         let sellerSku=item.item?.seller_sku||null;
-        if(!sellerSku&&item.item?.id){
-          try{
-            const ir=await fetch(`https://api.mercadolibre.com/items/${item.item.id}`,{headers:{Authorization:`Bearer ${token}`}});
-            const id=await ir.json();
-            sellerSku=id.seller_sku||(id.attributes||[]).find(a=>a.id==='SELLER_SKU'||a.id==='SKU')?.value_name||null;
-          }catch(_){}
-        }
+        if(!sellerSku&&item.item?.id){try{const ir=await fetch(`https://api.mercadolibre.com/items/${item.item.id}`,{headers:{Authorization:`Bearer ${token}`}});const id=await ir.json();sellerSku=id.seller_sku||(id.attributes||[]).find(a=>a.id==='SELLER_SKU'||a.id==='SKU')?.value_name||null;}catch(_){}}
         const prod=sellerSku?(prods||[]).find(p=>p.sku&&p.sku.trim().toLowerCase()===sellerSku.trim().toLowerCase()):null;
-        await db.from('ventas').insert({
-          canal:'mercadolibre',ml_order_id:String(order.id),ml_item_id:String(item.item?.id||''),
-          seller_sku:sellerSku||null,producto_id:prod?.id||null,
-          producto_nombre:item.item?.title||'ML',cantidad:item.quantity||1,
-          precio_unitario:item.unit_price||0,total:(item.quantity||1)*(item.unit_price||0),
-          costo_envio:Number(order.shipping?.cost||0),
-          envio_flex:Number(order.shipping?.cost||0),
-          comision_ml:Number(order.payments?.[0]?.marketplace_fee||0),
-          otras_comisiones:0,
-          costo_producto:prod?prod.costo*(item.quantity||1):0,
-          fecha:order.date_created?.split('T')[0]||today(),
-        });
+        await db.from('ventas').insert({canal:'mercadolibre',ml_order_id:String(order.id),ml_item_id:String(item.item?.id||''),seller_sku:sellerSku||null,producto_id:prod?.id||null,producto_nombre:item.item?.title||'ML',cantidad:item.quantity||1,precio_unitario:item.unit_price||0,total:(item.quantity||1)*(item.unit_price||0),costo_envio:Number(order.shipping?.cost||0),envio_flex:Number(order.shipping?.cost||0),comision_ml:Number(order.payments?.[0]?.marketplace_fee||0),otras_comisiones:0,costo_producto:prod?prod.costo*(item.quantity||1):0,fecha:order.date_created?.split('T')[0]||today()});
         if(prod){const ns=Math.max(0,prod.stock-(item.quantity||1));await db.from('productos').update({stock:ns}).eq('id',prod.id);prod.stock=ns;stockAct++;}
       }
       imp++;setProgress({done:imp+dup,total:orders.length});
@@ -985,50 +848,48 @@ function MercadoLibre(){
 
   const pct=progress?Math.round((progress.done/progress.total)*100):0;
 
-  return <>
-    <div className="page-header"><h2>🟡 Mercado Libre</h2><p>Token configurado en ⚙️ Configuración</p></div>
-    {msg&&<div className={`alert alert-${msgType}`} style={{marginBottom:16}}>{msg}</div>}
+  return<>
+    <div className="page-header"><h2>🟡 Mercado Libre</h2><p>Conectate desde ⚙️ Configuración</p></div>
+    {msg&&<div className={`alert alert-${msgType}`} style={{marginBottom:14}}>{msg}</div>}
 
-    <div className="card" style={{marginBottom:20,maxWidth:520}}>
-      <div className="card-label" style={{marginBottom:10}}>Estado de conexión</div>
+    <div className="card" style={{marginBottom:16,maxWidth:480}}>
+      <div className="card-label" style={{marginBottom:10}}>Estado</div>
       {conectado
         ?<div style={{padding:'10px 14px',background:'#064e3b',border:'1px solid #065f46',borderRadius:8,color:'#6ee7b7',fontWeight:600}}>✓ Token activo y verificado</div>
         :<div style={{padding:'10px 14px',background:'#7f1d1d22',border:'1px solid #7f1d1d',borderRadius:8,color:'#fca5a5',fontSize:13}}>
-            ⚠️ Sin conexión — Actualizá el token en <strong>⚙️ Configuración</strong>
+            ⚠️ Sin conexión — Usá el botón OAuth en <strong>⚙️ Configuración</strong>
           </div>
       }
       {conectado&&<button className="btn btn-secondary btn-sm" style={{marginTop:8}} onClick={()=>{setConectado(false);setOrders([]);}}>Reconectar</button>}
     </div>
 
     <div className="section-header">
-      <span style={{color:'#5b6396',fontSize:13}}>{orders.length>0?`${orders.length} órdenes cargadas`:'Hacé clic en Sincronizar'}</span>
-      <div style={{display:'flex',gap:8}}>
-        {orders.length>0&&<button className="btn btn-primary" onClick={importarTodas} disabled={importing||!conectado}>
-          {importing?<><div className="spinner"/>&nbsp;{progress?`${pct}% (${progress.done}/${progress.total})`:'Importando...'}</>:'⬇ Importar todas a Supabase'}
+      <span style={{color:'#5b6396',fontSize:13}}>{orders.length>0?`${orders.length} órdenes`:'Sin órdenes cargadas'}</span>
+      <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
+        {orders.length>0&&<button className="btn btn-primary btn-sm" onClick={importarTodas} disabled={importing||!conectado}>
+          {importing?<><div className="spinner"/>&nbsp;{progress?`${pct}%`:'...'}</>:'⬇ Importar todo'}
         </button>}
-        <button className="btn btn-success" onClick={traerOrdenes} disabled={loading||!conectado}>
-          {loading?<><div className="spinner"/>&nbsp;Cargando...</>:'↻ Sincronizar órdenes'}
+        <button className="btn btn-success btn-sm" onClick={traerOrdenes} disabled={loading||!conectado}>
+          {loading?<><div className="spinner"/>&nbsp;Cargando...</>:'↻ Sincronizar'}
         </button>
       </div>
     </div>
 
-    {importing&&progress&&<div style={{marginBottom:16}}>
+    {importing&&progress&&<div style={{marginBottom:14}}>
       <div className="progress-bar"><div className="progress-fill" style={{width:pct+'%'}}/></div>
-      <div style={{fontSize:11,color:'#5b6396',marginTop:4,textAlign:'right'}}>{progress.done}/{progress.total} procesadas</div>
+      <div style={{fontSize:11,color:'#5b6396',marginTop:4,textAlign:'right'}}>{progress.done}/{progress.total}</div>
     </div>}
 
     <div className="table-wrap"><table>
-      <thead><tr><th>#Orden</th><th>Producto</th><th>SKU</th><th>Cant.</th><th>Total</th><th>Envío</th><th>Fecha</th></tr></thead>
+      <thead><tr><th>#</th><th>Producto</th><th>SKU</th><th>Total</th><th>Fecha</th></tr></thead>
       <tbody>
         {orders.length===0
-          ?<tr><td colSpan={7}><div className="empty">{conectado?'Hacé clic en "Sincronizar órdenes"':'Verificá tu token en ⚙️ Configuración'}</div></td></tr>
-          :orders.map(o=>{const item=(o.order_items||[])[0]||{};return <tr key={o.id}>
-            <td style={{color:'#5b6396',fontSize:11}}>#{o.id}</td>
-            <td style={{fontWeight:600,color:'#fff'}}>{item.item?.title||'-'}</td>
+          ?<tr><td colSpan={5}><div className="empty">{conectado?'Sincronizá para ver órdenes':'Conectate en ⚙️ Configuración'}</div></td></tr>
+          :orders.map(o=>{const item=(o.order_items||[])[0]||{};return<tr key={o.id}>
+            <td style={{color:'#5b6396',fontSize:11}}>#{String(o.id).slice(-6)}</td>
+            <td style={{fontWeight:600,color:'#fff',maxWidth:140,overflow:'hidden',textOverflow:'ellipsis'}}>{item.item?.title||'-'}</td>
             <td style={{color:'#818cf8',fontSize:11}}>{item.item?.seller_sku||'—'}</td>
-            <td>{item.quantity||'-'}</td>
             <td style={{color:'#fbbf24',fontWeight:600}}>{fmt(o.total_amount)}</td>
-            <td style={{color:'#f87171'}}>{o.shipping?.cost>0?fmt(o.shipping.cost):'-'}</td>
             <td>{o.date_created?new Date(o.date_created).toLocaleDateString('es-AR'):'-'}</td>
           </tr>;})
         }
@@ -1038,30 +899,15 @@ function MercadoLibre(){
 }
 
 // ===== APP =====
-const PAGES=[
-  {id:'dashboard',label:'Dashboard',icon:'📊'},
-  {id:'stock',label:'Stock en vivo',icon:'📡'},
-  {id:'productos',label:'Productos',icon:'📦'},
-  {id:'compras',label:'Compras',icon:'🛒'},
-  {id:'ventas',label:'Ventas',icon:'💰'},
-  {id:'gastos',label:'Gastos',icon:'💸'},
-  {id:'precios',label:'Precios',icon:'🏷️'},
-  {id:'ml',label:'Mercado Libre',icon:'🟡'},
-  {id:'config',label:'Configuración',icon:'⚙️'},
-];
+const PAGE_LABELS={dashboard:'Dashboard',stock:'Stock en vivo',productos:'Productos',compras:'Compras',ventas:'Ventas',gastos:'Gastos',precios:'Precios',ml:'Mercado Libre',config:'Configuración'};
+const PAGE_COMPONENTS={dashboard:Dashboard,stock:StockVivo,productos:Productos,compras:Compras,ventas:Ventas,gastos:Gastos,precios:Precios,ml:MercadoLibre,config:Configuracion};
+
 function App(){
   const [page,setPage]=React.useState('dashboard');
-  const pages={dashboard:<Dashboard/>,stock:<StockVivo/>,productos:<Productos/>,compras:<Compras/>,ventas:<Ventas/>,gastos:<Gastos/>,precios:<Precios/>,ml:<MercadoLibre/>,config:<Configuracion/>};
-  return <div className="app">
-    <aside className="sidebar">
-      <div className="sidebar-logo"><h1>Mini ERP</h1><span>Gestión de negocio</span></div>
-      <nav className="sidebar-nav">
-        {PAGES.map(p=><div key={p.id} className={`nav-item${page===p.id?' active':''}`} onClick={()=>setPage(p.id)}>
-          <span className="icon">{p.icon}</span><span>{p.label}</span>
-        </div>)}
-      </nav>
-    </aside>
-    <main className="main">{pages[page]}</main>
+  const Component=PAGE_COMPONENTS[page]||Dashboard;
+  return<div className="app">
+    <Sidebar page={page} setPage={setPage} currentLabel={PAGE_LABELS[page]}/>
+    <main className="main"><Component/></main>
   </div>;
 }
 ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
