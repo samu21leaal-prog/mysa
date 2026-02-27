@@ -73,6 +73,7 @@ tr:hover td{background:#16192e}
 .alert-error{background:#7f1d1d22;border:1px solid #7f1d1d;color:#fca5a5}
 .alert-success{background:#06423422;border:1px solid #065f46;color:#6ee7b7}
 .alert-warn{background:#78350f22;border:1px solid #78350f;color:#fcd34d}
+.alert-warn{background:#78350f22;border:1px solid #78350f;color:#fcd34d}
 .loading{display:flex;align-items:center;justify-content:center;padding:40px;color:#5b6396;font-size:14px;gap:10px}
 .spinner{width:18px;height:18px;border:2px solid #2d3260;border-top-color:#818cf8;border-radius:50%;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -646,7 +647,9 @@ function MercadoLibre(){
   const [clientId,setClientId] = React.useState(()=>localStorage.getItem('ml_client_id')||'');
   const [orders,setOrders] = React.useState([]);
   const [loading,setLoading] = React.useState(false);
+  const [importing,setImporting] = React.useState(false);
   const [msg,setMsg] = React.useState('');
+  const [msgType,setMsgType] = React.useState('success');
   const BASE = window.location.origin;
 
   React.useEffect(()=>{
@@ -655,32 +658,46 @@ function MercadoLibre(){
       const t = p.get('token')||localStorage.getItem('ml_token')||'';
       if(t){setMlToken(t);localStorage.setItem('ml_token',t);}
       window.history.replaceState({},'',window.location.pathname);
-      setMsg('¡Conectado con Mercado Libre!');
+      showMsg('¡Conectado con Mercado Libre! Ahora podés traer tus órdenes.','success');
     }
   },[]);
 
+  const showMsg = (m,type='success')=>{setMsg(m);setMsgType(type);};
+
   const conectar = ()=>{
-    if(!clientId){setMsg('Ingresá tu Client ID primero');return;}
+    if(!clientId){showMsg('Ingresá tu Client ID primero','error');return;}
     localStorage.setItem('ml_client_id',clientId);
     const redirectUri = encodeURIComponent(`${BASE}/api/ml-callback`);
     window.location.href = `https://auth.mercadolibre.com.ar/authorization?response_type=code&client_id=${clientId}&redirect_uri=${redirectUri}`;
   };
 
+  const desconectar = ()=>{
+    localStorage.removeItem('ml_token');
+    setMlToken('');
+    setOrders([]);
+    showMsg('Desconectado de Mercado Libre','warn');
+  };
+
   const traerOrdenes = async()=>{
-    if(!mlToken){setMsg('Primero conectá con ML');return;}
     setLoading(true);setMsg('');
     try{
       const r = await fetch(`${BASE}/api/ml-orders?token=${mlToken}`);
       const d = await r.json();
-      if(d.error){setMsg('Error: '+d.message);setOrders([]);}
-      else{setOrders(d.orders||[]);setMsg(`${d.orders?.length||0} órdenes cargadas`);}
-    }catch(e){setMsg('Error de conexión');}
+      if(d.error){showMsg('Error: '+d.message,'error');setOrders([]);}
+      else{
+        setOrders(d.orders||[]);
+        showMsg(`${d.orders?.length||0} órdenes encontradas`,'success');
+      }
+    }catch(e){showMsg('Error de conexión con el servidor','error');}
     setLoading(false);
   };
 
   const importarVenta = async(order)=>{
     const items = order.order_items||[];
     for(const item of items){
+      // Verificar si ya existe para no duplicar
+      const {data:existe} = await db.from('ventas').select('id').eq('ml_order_id',String(order.id)).limit(1);
+      if(existe&&existe.length>0) continue;
       await db.from('ventas').insert({
         producto_nombre: item.item?.title||'ML - Sin título',
         cantidad: item.quantity||1,
@@ -690,46 +707,82 @@ function MercadoLibre(){
         fecha: order.date_created?.split('T')[0]||today(),
       });
     }
-    setMsg('Venta importada correctamente');
+    showMsg('✓ Venta importada','success');
+  };
+
+  const importarTodas = async()=>{
+    if(orders.length===0){showMsg('Primero traé las órdenes','warn');return;}
+    setImporting(true);setMsg('');
+    let importadas=0, duplicadas=0;
+    for(const order of orders){
+      const {data:existe} = await db.from('ventas').select('id').eq('ml_order_id',String(order.id)).limit(1);
+      if(existe&&existe.length>0){duplicadas++;continue;}
+      const items = order.order_items||[];
+      for(const item of items){
+        await db.from('ventas').insert({
+          producto_nombre: item.item?.title||'ML - Sin título',
+          cantidad: item.quantity||1,
+          precio_unitario: item.unit_price||0,
+          canal: 'mercadolibre',
+          ml_order_id: String(order.id),
+          fecha: order.date_created?.split('T')[0]||today(),
+        });
+      }
+      importadas++;
+    }
+    setImporting(false);
+    showMsg(`✅ ${importadas} órdenes importadas${duplicadas>0?` (${duplicadas} ya existían, no se duplicaron)`:''}`, 'success');
   };
 
   return <>
     <div className="page-header"><h2>🟡 Mercado Libre</h2><p>Sincronización de órdenes vía API</p></div>
-    {msg&&<div className={`alert ${msg.includes('Error')?'alert-error':msg.includes('!') ? 'alert-success':'alert-warn'}`}>{msg}</div>}
-    <div className="card" style={{marginBottom:20,maxWidth:500}}>
+    {msg&&<div className={`alert alert-${msgType}`}>{msg}</div>}
+
+    <div className="card" style={{marginBottom:20,maxWidth:520}}>
       <div className="card-label" style={{marginBottom:12}}>Conexión OAuth</div>
       <div className="form-group">
         <label>Client ID de tu app ML</label>
-        <input className="form-control" value={clientId} onChange={e=>setClientId(e.target.value)} placeholder="Ej: 7692918477883565"/>
+        <input className="form-control" value={clientId} onChange={e=>setClientId(e.target.value)} placeholder="Ej: 7692918477883565" disabled={!!mlToken}/>
       </div>
-      <button className="btn btn-primary" onClick={conectar} style={{width:'100%'}}>
-        {mlToken ? '✓ Reconectar Mercado Libre' : '🟡 Autorizar con Mercado Libre'}
-      </button>
-      {mlToken&&<div className="alert alert-success" style={{marginTop:12}}>Conectado ✓</div>}
+      {!mlToken
+        ? <button className="btn btn-primary" onClick={conectar} style={{width:'100%'}}>🟡 Autorizar con Mercado Libre</button>
+        : <div style={{display:'flex',gap:10}}>
+            <div style={{flex:1,padding:'10px 14px',background:'#064e3b',border:'1px solid #065f46',borderRadius:8,color:'#6ee7b7',fontSize:13,fontWeight:600}}>✓ Conectado a Mercado Libre</div>
+            <button className="btn btn-secondary" onClick={desconectar}>Desconectar</button>
+          </div>
+      }
     </div>
+
     {mlToken&&<>
-      <div className="section-header">
-        <span style={{color:'#5b6396',fontSize:13}}>{orders.length} órdenes</span>
-        <button className="btn btn-success" onClick={traerOrdenes} disabled={loading}>
-          {loading?<><div className="spinner"/>&nbsp;Cargando...</>:'↻ Traer órdenes'}
-        </button>
+      <div className="section-header" style={{marginBottom:16}}>
+        <span style={{color:'#5b6396',fontSize:13}}>{orders.length>0?`${orders.length} órdenes cargadas`:'Sin órdenes cargadas'}</span>
+        <div style={{display:'flex',gap:10}}>
+          {orders.length>0&&<button className="btn btn-primary" onClick={importarTodas} disabled={importing}>
+            {importing?<><div className="spinner"/>&nbsp;Importando...</>:'⬇ Importar todas a Ventas'}
+          </button>}
+          <button className="btn btn-success" onClick={traerOrdenes} disabled={loading}>
+            {loading?<><div className="spinner"/>&nbsp;Cargando...</>:'↻ Sincronizar órdenes'}
+          </button>
+        </div>
       </div>
       <div className="table-wrap">
         <table>
-          <thead><tr><th>ID Orden</th><th>Producto</th><th>Cantidad</th><th>Total</th><th>Fecha</th><th></th></tr></thead>
+          <thead><tr><th>ID Orden</th><th>Producto</th><th>Cant.</th><th>Total</th><th>Fecha</th><th></th></tr></thead>
           <tbody>
-            {orders.length===0?<tr><td colSpan={6}><div className="empty">Hacé clic en "Traer órdenes" para sincronizar</div></td></tr>:
-            orders.map(o=>{
-              const item = (o.order_items||[])[0]||{};
-              return <tr key={o.id}>
-                <td style={{color:'#5b6396',fontSize:12}}>#{o.id}</td>
-                <td style={{fontWeight:600,color:'#fff'}}>{item.item?.title||'-'}</td>
-                <td>{item.quantity||'-'}</td>
-                <td style={{color:'#fbbf24',fontWeight:600}}>{fmt(o.total_amount)}</td>
-                <td>{o.date_created?new Date(o.date_created).toLocaleDateString('es-AR'):'-'}</td>
-                <td><button className="btn btn-success btn-sm" onClick={()=>importarVenta(o)}>Importar</button></td>
-              </tr>;
-            })}
+            {orders.length===0
+              ?<tr><td colSpan={6}><div className="empty">Hacé clic en "Sincronizar órdenes" para traer tus ventas de ML</div></td></tr>
+              :orders.map(o=>{
+                const item=(o.order_items||[])[0]||{};
+                return <tr key={o.id}>
+                  <td style={{color:'#5b6396',fontSize:12}}>#{o.id}</td>
+                  <td style={{fontWeight:600,color:'#fff'}}>{item.item?.title||'-'}</td>
+                  <td>{item.quantity||'-'}</td>
+                  <td style={{color:'#fbbf24',fontWeight:600}}>{fmt(o.total_amount)}</td>
+                  <td>{o.date_created?new Date(o.date_created).toLocaleDateString('es-AR'):'-'}</td>
+                  <td><button className="btn btn-success btn-sm" onClick={()=>importarVenta(o)}>Importar</button></td>
+                </tr>;
+              })
+            }
           </tbody>
         </table>
       </div>
