@@ -1,72 +1,43 @@
-// api/ml-callback.js
-// Vercel Serverless Function
-// ML redirige acá con ?code=XXX después de que el usuario autoriza
-
 export default async function handler(req, res) {
-  // Permitir CORS para el frontend
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
-  if (req.method === "OPTIONS") return res.status(200).end();
+  const { code, error } = req.query;
 
-  const { code } = req.query;
-
-  if (!code) {
-    return res.status(400).json({ error: "Falta el parámetro code" });
+  if (error) {
+    return res.redirect(`${process.env.FRONTEND_URL}?ml_error=${error}`);
   }
 
-  const CLIENT_ID = process.env.ML_CLIENT_ID;
-  const CLIENT_SECRET = process.env.ML_CLIENT_SECRET;
-  const REDIRECT_URI = process.env.ML_REDIRECT_URI; // ej: https://tu-app.vercel.app/api/ml-callback
-
-  if (!CLIENT_ID || !CLIENT_SECRET || !REDIRECT_URI) {
-    return res.status(500).json({ error: "Faltan variables de entorno ML_CLIENT_ID, ML_CLIENT_SECRET o ML_REDIRECT_URI" });
+  if (!code) {
+    return res.status(400).json({ error: 'No code received' });
   }
 
   try {
-    // Intercambiar code por access_token
-    const body = new URLSearchParams({
-      grant_type: "authorization_code",
-      client_id: CLIENT_ID,
-      client_secret: CLIENT_SECRET,
-      code,
-      redirect_uri: REDIRECT_URI,
+    const response = await fetch('https://api.mercadolibre.com/oauth/token', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: new URLSearchParams({
+        grant_type: 'authorization_code',
+        client_id: process.env.ML_CLIENT_ID.trim(),
+        client_secret: process.env.ML_CLIENT_SECRET.trim(),
+        code,
+        redirect_uri: process.env.ML_REDIRECT_URI.trim(),
+      }),
     });
 
-    const tokenRes = await fetch("https://api.mercadolibre.com/oauth/token", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        "Accept": "application/json",
-      },
-      body: body.toString(),
-    });
+    const data = await response.json();
 
-    const tokenData = await tokenRes.json();
-
-    if (!tokenRes.ok) {
-      // Debug: mostrar qué valores se usaron (sin exponer el secret completo)
-      return res.status(400).json({
-        error: "Error al obtener token",
-        detail: tokenData,
-        debug: {
-          client_id_usado: CLIENT_ID,
-          client_id_longitud: CLIENT_ID?.length,
-          secret_longitud: CLIENT_SECRET?.length,
-          redirect_uri_usado: REDIRECT_URI,
-          code_recibido: code?.slice(0, 10) + "...",
-        }
-      });
+    if (data.error) {
+      return res.redirect(`${process.env.FRONTEND_URL}?ml_error=${data.error}&detail=${data.message}`);
     }
 
-    // Redirigir al frontend con el token en la URL (fragment, no queda en logs del server)
-    const frontendUrl = process.env.FRONTEND_URL || "/";
-    return res.redirect(302,
-      `${frontendUrl}#ml_token=${tokenData.access_token}&ml_user_id=${tokenData.user_id}&ml_expires=${tokenData.expires_in}`
-    );
+    // Guardar access_token Y refresh_token en cookies seguras (duran 6 meses)
+    const cookieOpts = 'Path=/; HttpOnly; SameSite=Lax; Max-Age=15552000';
+    res.setHeader('Set-Cookie', [
+      `ml_access_token=${data.access_token}; ${cookieOpts}`,
+      `ml_refresh_token=${data.refresh_token}; ${cookieOpts}`,
+      `ml_user_id=${data.user_id}; Path=/; SameSite=Lax; Max-Age=15552000`,
+    ]);
 
-  } catch (err) {
-    return res.status(500).json({ error: "Error interno", detail: err.message });
+    return res.redirect(`${process.env.FRONTEND_URL}?ml_connected=1`);
+  } catch (e) {
+    return res.redirect(`${process.env.FRONTEND_URL}?ml_error=server_error`);
   }
 }
-

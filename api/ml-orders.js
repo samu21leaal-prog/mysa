@@ -1,74 +1,82 @@
-// api/ml-orders.js
-// Proxy serverless: el frontend llama acá y este llama a ML con el token
+async function refreshToken(refreshToken, clientId, clientSecret) {
+  const response = await fetch('https://api.mercadolibre.com/oauth/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      grant_type: 'refresh_token',
+      client_id: clientId.trim(),
+      client_secret: clientSecret.trim(),
+      refresh_token: refreshToken,
+    }),
+  });
+  return response.json();
+}
+
+function parseCookies(cookieHeader) {
+  const cookies = {};
+  if (!cookieHeader) return cookies;
+  cookieHeader.split(';').forEach(c => {
+    const [k, ...v] = c.trim().split('=');
+    cookies[k.trim()] = v.join('=');
+  });
+  return cookies;
+}
 
 export default async function handler(req, res) {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Methods", "GET, OPTIONS");
-  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
-  if (req.method === "OPTIONS") return res.status(200).end();
+  const cookies = parseCookies(req.headers.cookie);
+  let accessToken = cookies.ml_access_token;
+  let refresh = cookies.ml_refresh_token;
+  const userId = cookies.ml_user_id;
 
-  const authHeader = req.headers["authorization"];
-  if (!authHeader || !authHeader.startsWith("Bearer ")) {
-    return res.status(401).json({ error: "Token no provisto. Incluí Authorization: Bearer <access_token>" });
+  // Si no hay token en cookies, intentar con query param (compatibilidad)
+  if (!accessToken) accessToken = req.query.token;
+
+  if (!accessToken && !refresh) {
+    return res.status(401).json({ error: true, message: 'No hay token. Autorizá con ML.' });
   }
 
-  const accessToken = authHeader.replace("Bearer ", "").trim();
-  const { user_id, offset = 0, limit = 50, status } = req.query;
+  const clientId = process.env.ML_CLIENT_ID.trim();
+  const clientSecret = process.env.ML_CLIENT_SECRET.trim();
+  const cookieOpts = 'Path=/; HttpOnly; SameSite=Lax; Max-Age=15552000';
 
-  if (!user_id) {
-    return res.status(400).json({ error: "Falta user_id" });
+  // Función para buscar órdenes
+  async function fetchOrders(token, uid) {
+    const url = uid
+      ? `https://api.mercadolibre.com/orders/search?seller=${uid}&access_token=${token}&sort=date_desc`
+      : `https://api.mercadolibre.com/orders/search?access_token=${token}&sort=date_desc`;
+    const r = await fetch(url);
+    return { status: r.status, data: await r.json() };
   }
 
-  try {
-    // Construir URL de búsqueda de órdenes
-    const params = new URLSearchParams({
-      seller: user_id,
-      offset,
-      limit,
-      ...(status ? { order_status: status } : {}),
-    });
+  // Primer intento con el token actual
+  let { status, data } = await fetchOrders(accessToken, userId);
 
-    const mlRes = await fetch(
-      `https://api.mercadolibre.com/orders/search?${params.toString()}`,
-      {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-          "Content-Type": "application/json",
-        },
-      }
-    );
+  // Si expiró (401) y hay refresh token, renovar automáticamente
+  if (status === 401 && refresh) {
+    const refreshData = await refreshToken(refresh, clientId, clientSecret);
 
-    const data = await mlRes.json();
+    if (refreshData.access_token) {
+      accessToken = refreshData.access_token;
+      refresh = refreshData.refresh_token || refresh;
 
-    if (!mlRes.ok) {
-      return res.status(mlRes.status).json({ error: "Error de ML API", detail: data });
+      // Guardar nuevos tokens en cookies
+      res.setHeader('Set-Cookie', [
+        `ml_access_token=${accessToken}; ${cookieOpts}`,
+        `ml_refresh_token=${refresh}; ${cookieOpts}`,
+      ]);
+
+      // Reintentar con nuevo token
+      const retry = await fetchOrders(accessToken, userId);
+      status = retry.status;
+      data = retry.data;
+    } else {
+      return res.status(401).json({ error: true, message: 'Sesión vencida. Volvé a autorizar con ML.' });
     }
-
-    // Transformar órdenes al formato del ERP
-    const orders = (data.results || []).map(order => ({
-      ml_order_id: String(order.id),
-      date: order.date_created?.split("T")[0] || new Date().toISOString().split("T")[0],
-      status: order.status,
-      buyer: order.buyer?.nickname || "Comprador ML",
-      total: order.total_amount || 0,
-      items: (order.order_items || []).map(item => ({
-        title: item.item?.title || "Producto",
-        quantity: item.quantity,
-        unit_price: item.unit_price,
-        sku: item.item?.seller_sku || "",
-      })),
-      shipping_id: order.shipping?.id || null,
-      payment_status: order.payments?.[0]?.status || "unknown",
-    }));
-
-    return res.status(200).json({
-      total: data.paging?.total || 0,
-      offset: data.paging?.offset || 0,
-      limit: data.paging?.limit || 50,
-      orders,
-    });
-
-  } catch (err) {
-    return res.status(500).json({ error: "Error interno del proxy", detail: err.message });
   }
+
+  if (status !== 200) {
+    return res.status(status).json({ error: true, message: data.message || 'Error de ML' });
+  }
+
+  return res.status(200).json({ orders: data.results || [] });
 }
