@@ -113,6 +113,62 @@ export default async function handler(req, res) {
       );
     })
   );
+const doSync = String(req.query.sync || '') === '1';
 
+  if (doSync) {
+    const inserts = [];
+    const issues = [];
+
+    for (const order of orders) {
+      const mlOrderId = String(order.id);
+      const fecha = order.date_created || order.date_closed || new Date().toISOString();
+
+      for (const oi of (order.order_items || [])) {
+        const itemId = oi?.item?.id ? String(oi.item.id) : null;
+        const sellerSku = oi?.item?.sku || null; // lo agregaste vos con fetchItemSku
+
+        if (!itemId || !sellerSku) {
+          issues.push({ ml_order_id: mlOrderId, reason: 'MISSING_ITEM_OR_SKU' });
+          continue;
+        }
+
+        const prod = await findProductBySku(sellerSku);
+        if (!prod?.id) {
+          issues.push({ ml_order_id: mlOrderId, reason: 'SKU_NOT_FOUND', sellerSku });
+          continue;
+        }
+
+        const cantidad = Number(oi.quantity || 0);
+        const precioUnit = Number(oi.unit_price || 0);
+        const total = cantidad * precioUnit;
+
+        inserts.push({
+          canal: 'mercadolibre',
+          ml_order_id: mlOrderId,
+          ml_item_id: itemId,
+          seller_sku: sellerSku,
+          producto_id: prod.id,
+          producto_nombre: prod.nombre || oi?.item?.title || 'Sin nombre',
+          cantidad,
+          precio_unitario: precioUnit,
+          total,
+          fecha,
+        });
+      }
+    }
+
+    if (inserts.length) {
+      const { error } = await supabaseAdmin
+        .from('ventas')
+        .upsert(inserts, { onConflict: 'ml_order_id,ml_item_id' });
+
+      if (error) {
+        return res.status(500).json({ error: true, message: 'Error insertando ventas', details: error.message });
+      }
+    }
+
+    // Te devuelve issues para que veas SKUs no encontrados
+    return res.status(200).json({ ok: true, inserted: inserts.length, issues });
+  }
   return res.status(200).json({ orders });
 }
