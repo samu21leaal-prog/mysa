@@ -175,22 +175,22 @@ function Dashboard(){
 
   const load = async()=>{
     const [{data:v},{data:c},{data:g},{data:p}] = await Promise.all([
-      db.from('ventas').select('total,costo_envio,costo_producto').gte('fecha',mes+'-01'),
+      db.from('ventas').select('total,costo_envio,costo_producto,comision_ml').gte('fecha',mes+'-01'),
       db.from('compras').select('total').gte('fecha',mes+'-01'),
       db.from('gastos').select('monto,categoria').gte('fecha',mes+'-01'),
       db.from('productos').select('stock,stock_minimo'),
     ]);
-    const totalVentas = (v||[]).reduce((a,x)=>a+Number(x.total),0);
-    const totalEnvios = (v||[]).reduce((a,x)=>a+Number(x.costo_envio||0),0);
-    const totalCostosProd = (v||[]).reduce((a,x)=>a+Number(x.costo_producto||0),0);
-    const totalCompras = (c||[]).reduce((a,x)=>a+Number(x.total),0);
-    const gastosNorm = (g||[]).filter(x=>x.categoria!=='__costo_fijo__').reduce((a,x)=>a+Number(x.monto),0);
-    const costoFijoMensual = (g||[]).filter(x=>x.categoria==='__costo_fijo__').reduce((a,x)=>a+Number(x.monto),0);
+    const ventasBrutas   = (v||[]).reduce((a,x)=>a+Number(x.total||0),0);
+    const totalFlex      = (v||[]).reduce((a,x)=>a+Number(x.costo_envio||0),0);
+    const totalComML     = (v||[]).reduce((a,x)=>a+Number(x.comision_ml||0),0);
+    const totalCostProd  = (v||[]).reduce((a,x)=>a+Number(x.costo_producto||0),0);
+    const totalCompras   = (c||[]).reduce((a,x)=>a+Number(x.total||0),0);
+    const gastosNorm     = (g||[]).filter(x=>x.categoria!=='__costo_fijo__').reduce((a,x)=>a+Number(x.monto),0);
+    const costoFijo      = (g||[]).filter(x=>x.categoria==='__costo_fijo__').reduce((a,x)=>a+Number(x.monto),0);
+    const ventasNetas    = ventasBrutas - totalFlex - totalComML - totalCostProd - costoFijo - gastosNorm;
     setData({
-      ventas:totalVentas, compras:totalCompras, gastos:gastosNorm,
-      envios:totalEnvios, costosProd:totalCostosProd,
-      costoFijo:costoFijoMensual,
-      ganancia: totalVentas - totalEnvios - totalCostosProd - totalCompras - gastosNorm - costoFijoMensual,
+      ventasBrutas, totalFlex, totalComML, totalCostProd,
+      totalCompras, gastosNorm, costoFijo, ventasNetas,
       stockBajo:(p||[]).filter(x=>x.stock<=x.stock_minimo).length,
       ventasCount:(v||[]).length,
     });
@@ -205,14 +205,14 @@ function Dashboard(){
       <p><span className="live-dot"/>En vivo — {new Date().toLocaleString('es-AR',{month:'long',year:'numeric'})}</p>
     </div>
     <div className="cards-grid">
-      <div className="card"><div className="card-label">Ventas del mes</div><div className="card-value green">{fmt(data.ventas)}</div><div className="card-sub">{data.ventasCount} transacciones</div></div>
-      <div className="card"><div className="card-label">Costo de productos</div><div className="card-value red">{fmt(data.costosProd)}</div></div>
-      <div className="card"><div className="card-label">Envíos</div><div className="card-value red">{fmt(data.envios)}</div></div>
-      <div className="card"><div className="card-label">Compras</div><div className="card-value red">{fmt(data.compras)}</div></div>
-      <div className="card"><div className="card-label">Gastos operativos</div><div className="card-value red">{fmt(data.gastos)}</div></div>
-      <div className="card"><div className="card-label">Costo fijo mensual</div><div className="card-value red">{fmt(data.costoFijo)}</div></div>
-      <div className="card"><div className="card-label">Ganancia neta</div><div className={`card-value ${data.ganancia>=0?'green':'red'}`}>{fmt(data.ganancia)}</div></div>
-      <div className="card"><div className="card-label">Stock bajo</div><div className={`card-value ${data.stockBajo>0?'yellow':'green'}`}>{data.stockBajo}</div><div className="card-sub">{data.stockBajo>0?'Revisar':'OK'}</div></div>
+      <div className="card"><div className="card-label">💰 Ventas brutas</div><div className="card-value green">{fmt(data.ventasBrutas)}</div><div className="card-sub">{data.ventasCount} transacciones</div></div>
+      <div className="card"><div className="card-label">📦 Costo productos</div><div className="card-value red">{fmt(data.totalCostProd)}</div></div>
+      <div className="card"><div className="card-label">🚚 Flex (envíos)</div><div className="card-value red">{fmt(data.totalFlex)}</div></div>
+      <div className="card"><div className="card-label">🟡 Comisiones ML</div><div className="card-value red">{fmt(data.totalComML)}</div></div>
+      <div className="card"><div className="card-label">⚙️ Costo fijo</div><div className="card-value red">{fmt(data.costoFijo)}</div></div>
+      <div className="card"><div className="card-label">💸 Gastos operativos</div><div className="card-value red">{fmt(data.gastosNorm)}</div></div>
+      <div className="card"><div className="card-label">💵 Ventas netas</div><div className={`card-value ${data.ventasNetas>=0?'green':'red'}`}>{fmt(data.ventasNetas)}</div><div className="card-sub">Lo que queda en mano</div></div>
+      <div className="card"><div className="card-label">⚠️ Stock bajo</div><div className={`card-value ${data.stockBajo>0?'yellow':'green'}`}>{data.stockBajo}</div><div className="card-sub">{data.stockBajo>0?'Revisar':'OK'}</div></div>
     </div>
   </>;
 }
@@ -334,27 +334,46 @@ function Compras(){
   const {openPicker,Input} = useExcelImport(async(rows)=>{
     if(!rows||rows.length===0){setImportMsg('⚠️ El archivo está vacío o no tiene datos');return;}
     setImportMsg(`Importando ${rows.length} filas...`);
-    let ok=0,err=0,errores=[];
+    // Traer productos para cruzar por nombre/SKU
+    const {data:prods}=await db.from('productos').select('id,nombre,sku,stock,costo');
+    let ok=0,err=0,stockAct=0,errores=[];
     for(const r of rows){
-      // Normalizar claves: quitar espacios y pasar a minúsculas
       const norm={};
       Object.keys(r).forEach(k=>{ norm[k.trim().toLowerCase().replace(/\s+/g,'_')]=r[k]; });
+      const nombreBuscado = String(norm['producto']||norm['producto_nombre']||norm['nombre']||'').trim();
+      const skuBuscado = String(norm['sku']||'').trim();
+      const cantidad = Number(norm['cantidad']||1);
+      const costoUnitario = Number(norm['costo_unitario']||norm['costo']||0);
+      // Cruzar con producto por SKU o nombre (case-insensitive)
+      const prod = (prods||[]).find(p=>
+        (skuBuscado && p.sku && p.sku.trim().toLowerCase()===skuBuscado.toLowerCase()) ||
+        (nombreBuscado && p.nombre.trim().toLowerCase()===nombreBuscado.toLowerCase())
+      );
       const payload = {
-        producto_nombre: String(norm['producto']||norm['producto_nombre']||norm['nombre']||'').trim()||'Sin nombre',
-        cantidad: Number(norm['cantidad']||1),
-        costo_unitario: Number(norm['costo_unitario']||norm['costo']||0),
+        producto_id: prod?.id||null,
+        producto_nombre: nombreBuscado||'Sin nombre',
+        cantidad, costo_unitario: costoUnitario,
         proveedor: String(norm['proveedor']||'').trim(),
         fecha: parseExcelDate(norm['fecha']),
         notas: String(norm['notas']||'').trim(),
       };
       const {error} = await db.from('compras').insert(payload);
-      if(error){err++;errores.push(error.message);}
-      else ok++;
+      if(error){err++;errores.push(error.message);continue;}
+      ok++;
+      // Actualizar stock y costo si encontró el producto
+      if(prod){
+        await db.from('productos').update({
+          stock: prod.stock + cantidad,
+          costo: costoUnitario||prod.costo,
+        }).eq('id',prod.id);
+        prod.stock += cantidad; // actualizar local
+        stockAct++;
+      }
     }
     if(ok>0) load();
     setImportMsg(ok>0
-      ? `✅ ${ok} compras importadas${err>0?' | ⚠️ '+err+' errores: '+errores[0]:''}`
-      : `❌ Error al importar: ${errores[0]||'revisar formato'}`
+      ? `✅ ${ok} importadas, ${stockAct} stocks actualizados${err>0?' | ⚠️ '+err+' errores: '+errores[0]:''}`
+      : `❌ Error: ${errores[0]||'revisar formato'}`
     );
   });
 
@@ -414,43 +433,110 @@ function Compras(){
 function Ventas(){
   const [items,setItems] = React.useState([]);
   const [productos,setProductos] = React.useState([]);
+  const [costoFijoMensual,setCostoFijoMensual] = React.useState(0);
   const [loading,setLoading] = React.useState(true);
   const [modal,setModal] = React.useState(false);
   const [filtroCanal,setFiltroCanal] = React.useState('');
-  const [form,setForm] = React.useState({producto_id:'',producto_nombre:'',cantidad:1,precio_unitario:0,costo_envio:0,costo_producto:0,canal:'mostrador',fecha:today(),notas:''});
+  const [form,setForm] = React.useState({producto_id:'',producto_nombre:'',cantidad:1,precio_unitario:0,costo_flex:0,comision_ml:0,costo_producto:0,canal:'mostrador',fecha:today(),notas:''});
   const [msg,setMsg] = React.useState('');
   const [importMsg,setImportMsg] = React.useState('');
 
-  const load = async()=>{ setLoading(true); const [{data:v},{data:p}]=await Promise.all([db.from('ventas').select('*').order('fecha',{ascending:false}),db.from('productos').select('id,nombre,stock,costo').order('nombre')]); setItems(v||[]); setProductos(p||[]); setLoading(false); };
+  const load = async()=>{
+    setLoading(true);
+    const [{data:v},{data:p},{data:g}]=await Promise.all([
+      db.from('ventas').select('*').order('fecha',{ascending:false}),
+      db.from('productos').select('id,nombre,stock,costo,sku').order('nombre'),
+      db.from('gastos').select('monto').eq('categoria','__costo_fijo__').limit(1),
+    ]);
+    setItems(v||[]);
+    setProductos(p||[]);
+    setCostoFijoMensual(g&&g.length>0?Number(g[0].monto):0);
+    setLoading(false);
+  };
   React.useEffect(()=>{load()},[]);
 
   const save = async()=>{
     if(!form.cantidad||!form.precio_unitario){setMsg('Completá cantidad y precio');return;}
-    const nombre = form.producto_id?(productos.find(p=>p.id===form.producto_id)||{}).nombre||form.producto_nombre:form.producto_nombre;
-    const costoProd = form.producto_id?(productos.find(p=>p.id===form.producto_id)||{}).costo||0:Number(form.costo_producto);
-    await db.from('ventas').insert({producto_id:form.producto_id||null,producto_nombre:nombre,cantidad:Number(form.cantidad),precio_unitario:Number(form.precio_unitario),costo_envio:Number(form.costo_envio||0),costo_producto:costoProd*Number(form.cantidad),canal:form.canal,fecha:form.fecha,notas:form.notas});
-    if(form.producto_id){const prod=productos.find(p=>p.id===form.producto_id);if(prod)await db.from('productos').update({stock:Math.max(0,prod.stock-Number(form.cantidad))}).eq('id',form.producto_id);}
-    setModal(false);setMsg('');setForm({producto_id:'',producto_nombre:'',cantidad:1,precio_unitario:0,costo_envio:0,costo_producto:0,canal:'mostrador',fecha:today(),notas:''});load();
+    const prod = form.producto_id ? productos.find(p=>p.id===form.producto_id) : null;
+    const nombre = prod ? prod.nombre : form.producto_nombre;
+    const costoProd = prod ? prod.costo * Number(form.cantidad) : Number(form.costo_producto);
+    await db.from('ventas').insert({
+      producto_id:form.producto_id||null,
+      producto_nombre:nombre,
+      cantidad:Number(form.cantidad),
+      precio_unitario:Number(form.precio_unitario),
+      costo_envio:Number(form.costo_flex||0),
+      comision_ml:Number(form.comision_ml||0),
+      costo_producto:costoProd,
+      canal:form.canal,
+      fecha:form.fecha,
+      notas:form.notas,
+    });
+    if(prod) await db.from('productos').update({stock:Math.max(0,prod.stock-Number(form.cantidad))}).eq('id',prod.id);
+    setModal(false);setMsg('');
+    setForm({producto_id:'',producto_nombre:'',cantidad:1,precio_unitario:0,costo_flex:0,comision_ml:0,costo_producto:0,canal:'mostrador',fecha:today(),notas:''});
+    load();
   };
   const del = async(id)=>{ if(!confirm('¿Eliminar?'))return; await db.from('ventas').delete().eq('id',id); load(); };
 
   const {openPicker,Input} = useExcelImport(async(rows)=>{
-    setImportMsg('Importando...');let ok=0;
+    if(!rows||rows.length===0){setImportMsg('⚠️ El archivo está vacío');return;}
+    setImportMsg(`Importando ${rows.length} filas...`);
+    const {data:prods}=await db.from('productos').select('id,nombre,sku,stock,costo');
+    let ok=0,err=0,stockAct=0,errores=[];
     for(const r of rows){
-      await db.from('ventas').insert({
-        producto_nombre:r['producto']||r['Producto']||'Sin nombre',
-        cantidad:Number(r['cantidad']||1),precio_unitario:Number(r['precio_unitario']||0),
-        costo_envio:Number(r['costo_envio']||0),costo_producto:Number(r['costo_producto']||0),
-        canal:r['canal']||'mostrador',fecha:parseExcelDate(r['fecha']),notas:r['notas']||'',
-      });ok++;
+      const norm={};
+      Object.keys(r).forEach(k=>{ norm[k.trim().toLowerCase().replace(/\s+/g,'_')]=r[k]; });
+      const nombreBuscado = String(norm['producto']||norm['producto_nombre']||norm['nombre']||'').trim();
+      const skuBuscado = String(norm['sku']||'').trim();
+      const cantidad = Number(norm['cantidad']||1);
+      const prod = (prods||[]).find(p=>
+        (skuBuscado && p.sku && p.sku.trim().toLowerCase()===skuBuscado.toLowerCase()) ||
+        (nombreBuscado && p.nombre.trim().toLowerCase()===nombreBuscado.toLowerCase())
+      );
+      const {error} = await db.from('ventas').insert({
+        producto_id: prod?.id||null,
+        producto_nombre: nombreBuscado||'Sin nombre',
+        cantidad,
+        precio_unitario:Number(norm['precio_unitario']||0),
+        costo_envio:Number(norm['costo_flex']||norm['costo_envio']||0),
+        comision_ml:Number(norm['comision_ml']||0),
+        costo_producto: prod ? prod.costo*cantidad : Number(norm['costo_producto']||0),
+        canal:norm['canal']||'mostrador',
+        fecha:parseExcelDate(norm['fecha']),
+        notas:String(norm['notas']||'').trim(),
+      });
+      if(error){err++;errores.push(error.message);continue;}
+      ok++;
+      if(prod){
+        await db.from('productos').update({stock:Math.max(0,prod.stock-cantidad)}).eq('id',prod.id);
+        prod.stock=Math.max(0,prod.stock-cantidad);
+        stockAct++;
+      }
     }
-    setImportMsg(`✅ ${ok} ventas importadas`);load();
+    if(ok>0) load();
+    setImportMsg(ok>0
+      ? `✅ ${ok} importadas, ${stockAct} stocks actualizados${err>0?' | ⚠️ '+err+' errores: '+errores[0]:''}`
+      : `❌ Error: ${errores[0]||'revisar formato'}`
+    );
   });
 
   const filtered = filtroCanal?items.filter(x=>x.canal===filtroCanal):items;
-  const totalVentas = filtered.reduce((a,x)=>a+Number(x.total),0);
-  const totalEnvios = filtered.reduce((a,x)=>a+Number(x.costo_envio||0),0);
-  const totalCostos = filtered.reduce((a,x)=>a+Number(x.costo_producto||0),0);
+  const totalVentas   = filtered.reduce((a,x)=>a+Number(x.total||0),0);
+  const totalFlex     = filtered.reduce((a,x)=>a+Number(x.costo_envio||0),0);
+  const totalComML    = filtered.reduce((a,x)=>a+Number(x.comision_ml||0),0);
+  const totalCostProd = filtered.reduce((a,x)=>a+Number(x.costo_producto||0),0);
+  // Costo fijo prorrateado por cantidad de ventas del mes vs total filtrado
+  const ventasMes = items.length||1;
+  const cfProrrateado = (filtered.length/ventasMes)*costoFijoMensual;
+  const totalEnMano = totalVentas - totalFlex - totalComML - totalCostProd - cfProrrateado;
+
+  // Preview en modal
+  const prevIngreso = Number(form.cantidad||1)*Number(form.precio_unitario||0);
+  const prevCostProd = Number(form.costo_producto||0);
+  const prevFlex = Number(form.costo_flex||0);
+  const prevComML = Number(form.comision_ml||0);
+  const prevEnMano = prevIngreso - prevCostProd - prevFlex - prevComML;
 
   return <>
     <Input/>
@@ -461,35 +547,41 @@ function Ventas(){
         {CANALES.map(c=><option key={c} value={c}>{CANAL_LABELS[c]}</option>)}
       </select>
       <div style={{marginLeft:'auto',display:'flex',gap:8,alignItems:'center'}}>
-        {filtroCanal&&<span style={{color:'#34d399',fontWeight:700,fontSize:13}}>{fmt(totalVentas)}</span>}
-        <button className="btn btn-secondary btn-sm" onClick={()=>descargarPlantilla('ventas',['producto','cantidad','precio_unitario','costo_envio','costo_producto','canal','fecha','notas'])}>⬇ Plantilla</button>
+        <button className="btn btn-secondary btn-sm" onClick={()=>descargarPlantilla('ventas',['producto','sku','cantidad','precio_unitario','costo_flex','comision_ml','canal','fecha','notas'])}>⬇ Plantilla</button>
         <button className="btn btn-yellow btn-sm" onClick={openPicker}>📥 Importar</button>
         <button className="btn btn-primary" onClick={()=>setModal(true)}>+ Nueva</button>
       </div>
     </div>
-    {filtroCanal&&<div className="cards-grid" style={{marginBottom:16}}>
-      <div className="card"><div className="card-label">Ingresos</div><div className="card-value green">{fmt(totalVentas)}</div></div>
-      <div className="card"><div className="card-label">Costo productos</div><div className="card-value red">{fmt(totalCostos)}</div></div>
-      <div className="card"><div className="card-label">Costo envíos</div><div className="card-value red">{fmt(totalEnvios)}</div></div>
-      <div className="card"><div className="card-label">Margen bruto</div><div className={`card-value ${totalVentas-totalCostos-totalEnvios>=0?'green':'red'}`}>{fmt(totalVentas-totalCostos-totalEnvios)}</div></div>
-    </div>}
+    <div className="cards-grid" style={{marginBottom:16}}>
+      <div className="card"><div className="card-label">Ventas brutas</div><div className="card-value green">{fmt(totalVentas)}</div><div className="card-sub">{filtered.length} ventas</div></div>
+      <div className="card"><div className="card-label">Costo producto</div><div className="card-value red">{fmt(totalCostProd)}</div></div>
+      <div className="card"><div className="card-label">Flex (envíos)</div><div className="card-value red">{fmt(totalFlex)}</div></div>
+      <div className="card"><div className="card-label">Comisiones ML</div><div className="card-value red">{fmt(totalComML)}</div></div>
+      <div className="card"><div className="card-label">Costo fijo (prorr.)</div><div className="card-value red">{fmt(cfProrrateado)}</div></div>
+      <div className="card"><div className="card-label">💵 Total en mano</div><div className={`card-value ${totalEnMano>=0?'green':'red'}`}>{fmt(totalEnMano)}</div></div>
+    </div>
     {importMsg&&<div className="alert alert-success" style={{marginBottom:12}}>{importMsg}</div>}
     {loading?<div className="loading"><div className="spinner"/></div>:
-    <div className="table-wrap"><table>
-      <thead><tr><th>Fecha</th><th>Producto</th><th>Canal</th><th>Cant.</th><th>Precio</th><th>Envío</th><th>Costo prod.</th><th>Rentabilidad</th><th></th></tr></thead>
+    <div className="table-wrap" style={{overflowX:'auto'}}><table>
+      <thead><tr><th>Fecha</th><th>Producto</th><th>Canal</th><th>Cant.</th><th>Precio</th><th>Costo prod.</th><th>Flex</th><th>Com. ML</th><th>En mano</th><th></th></tr></thead>
       <tbody>
-        {filtered.length===0?<tr><td colSpan={9}><div className="empty">Sin ventas</div></td></tr>:
+        {filtered.length===0?<tr><td colSpan={10}><div className="empty">Sin ventas</div></td></tr>:
         filtered.map(v=>{
-          const ingreso=Number(v.total);const costos=Number(v.costo_envio||0)+Number(v.costo_producto||0);const rentab=ingreso-costos;
+          const ingreso=Number(v.total||0);
+          const costProd=Number(v.costo_producto||0);
+          const flex=Number(v.costo_envio||0);
+          const comML=Number(v.comision_ml||0);
+          const enMano=ingreso-costProd-flex-comML;
           return <tr key={v.id}>
             <td>{fmtDate(v.fecha)}</td>
             <td style={{fontWeight:600,color:'#fff'}}>{v.producto_nombre||'-'}</td>
             <td><Badge canal={v.canal}/></td>
             <td>{v.cantidad}</td>
-            <td style={{color:'#34d399'}}>{fmt(v.precio_unitario)}</td>
-            <td style={{color:'#f87171'}}>{v.costo_envio>0?fmt(v.costo_envio):'-'}</td>
-            <td style={{color:'#f87171'}}>{v.costo_producto>0?fmt(v.costo_producto):'-'}</td>
-            <td><span className={rentab>=0?'rentab-pos':'rentab-neg'}>{fmt(rentab)}</span></td>
+            <td style={{color:'#34d399',fontWeight:600}}>{fmt(v.precio_unitario)}</td>
+            <td style={{color:'#f87171'}}>{costProd>0?fmt(costProd):'-'}</td>
+            <td style={{color:'#f87171'}}>{flex>0?fmt(flex):'-'}</td>
+            <td style={{color:'#f87171'}}>{comML>0?fmt(comML):'-'}</td>
+            <td><span className={enMano>=0?'rentab-pos':'rentab-neg'}>{fmt(enMano)}</span></td>
             <td><button className="btn btn-danger btn-sm" onClick={()=>del(v.id)}>✕</button></td>
           </tr>;
         })}
@@ -499,8 +591,12 @@ function Ventas(){
       <h3>Nueva venta</h3>
       {msg&&<div className="alert alert-error">{msg}</div>}
       <div className="form-group"><label>Producto</label>
-        <select className="form-control" value={form.producto_id} onChange={e=>{const p=productos.find(x=>x.id===e.target.value);setForm({...form,producto_id:e.target.value,costo_producto:p?p.costo:0});}}>
-          <option value="">— Manual —</option>{productos.map(p=><option key={p.id} value={p.id}>{p.nombre} (stock:{p.stock})</option>)}
+        <select className="form-control" value={form.producto_id} onChange={e=>{
+          const p=productos.find(x=>x.id===e.target.value);
+          setForm({...form,producto_id:e.target.value,costo_producto:p?p.costo:form.costo_producto});
+        }}>
+          <option value="">— Manual —</option>
+          {productos.map(p=><option key={p.id} value={p.id}>{p.nombre} — SKU:{p.sku||'?'} (stock:{p.stock})</option>)}
         </select>
       </div>
       {!form.producto_id&&<div className="form-group"><label>Nombre manual</label><input className="form-control" value={form.producto_nombre} onChange={e=>setForm({...form,producto_nombre:e.target.value})}/></div>}
@@ -509,19 +605,27 @@ function Ventas(){
         <div className="form-group"><label>Precio unit. ($)</label><input type="number" className="form-control" value={form.precio_unitario} onChange={e=>setForm({...form,precio_unitario:e.target.value})}/></div>
       </div>
       <div className="form-row">
-        <div className="form-group"><label>Costo envío ($)</label><input type="number" className="form-control" value={form.costo_envio} onChange={e=>setForm({...form,costo_envio:e.target.value})}/></div>
-        <div className="form-group"><label>Costo producto ($)</label><input type="number" className="form-control" value={form.costo_producto} onChange={e=>setForm({...form,costo_producto:e.target.value})} placeholder="Auto si elegís producto"/></div>
+        <div className="form-group"><label>Costo producto ($)</label><input type="number" className="form-control" value={form.costo_producto} onChange={e=>setForm({...form,costo_producto:e.target.value})} placeholder="Se carga auto por SKU"/></div>
+        <div className="form-group"><label>Comisión ML ($)</label><input type="number" className="form-control" value={form.comision_ml} onChange={e=>setForm({...form,comision_ml:e.target.value})} placeholder="Ej: 1200"/></div>
       </div>
       <div className="form-row">
+        <div className="form-group"><label>Flex — Costo envío ($)</label><input type="number" className="form-control" value={form.costo_flex} onChange={e=>setForm({...form,costo_flex:e.target.value})} placeholder="Costo Flex"/></div>
         <div className="form-group"><label>Canal</label>
           <select className="form-control" value={form.canal} onChange={e=>setForm({...form,canal:e.target.value})}>
             {CANALES.map(c=><option key={c} value={c}>{CANAL_LABELS[c]}</option>)}
           </select>
         </div>
-        <div className="form-group"><label>Fecha</label><input type="date" className="form-control" value={form.fecha} onChange={e=>setForm({...form,fecha:e.target.value})}/></div>
       </div>
-      {form.cantidad&&form.precio_unitario&&<div className="alert alert-success">
-        Ingreso: {fmt(form.cantidad*form.precio_unitario)} | Rentab: {fmt(form.cantidad*form.precio_unitario - Number(form.costo_envio||0) - Number(form.costo_producto||0)*Number(form.cantidad))}
+      <div className="form-group"><label>Fecha</label><input type="date" className="form-control" value={form.fecha} onChange={e=>setForm({...form,fecha:e.target.value})}/></div>
+      {form.precio_unitario>0&&<div className="alert alert-success" style={{marginBottom:8}}>
+        <div style={{display:'grid',gridTemplateColumns:'1fr 1fr',gap:4,fontSize:12}}>
+          <span>Ingreso bruto:</span><span style={{fontWeight:700}}>{fmt(prevIngreso)}</span>
+          <span>— Costo producto:</span><span style={{color:'#f87171'}}>- {fmt(prevCostProd)}</span>
+          <span>— Flex:</span><span style={{color:'#f87171'}}>- {fmt(prevFlex)}</span>
+          <span>— Comisión ML:</span><span style={{color:'#f87171'}}>- {fmt(prevComML)}</span>
+          <span style={{fontWeight:700,borderTop:'1px solid #065f46',paddingTop:4}}>💵 En mano:</span>
+          <span style={{fontWeight:700,color:prevEnMano>=0?'#34d399':'#f87171',borderTop:'1px solid #065f46',paddingTop:4}}>{fmt(prevEnMano)}</span>
+        </div>
       </div>}
       <div style={{display:'flex',gap:10}}>
         <button className="btn btn-primary" style={{flex:1}} onClick={save}>Guardar</button>
