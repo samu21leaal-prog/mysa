@@ -1,0 +1,876 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Mini ERP</title>
+<script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+<script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:#0f1117;color:#e2e8f0;min-height:100vh}
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:#1a1d2e}
+::-webkit-scrollbar-thumb{background:#3d4466;border-radius:3px}
+.app{display:flex;min-height:100vh}
+.sidebar{width:220px;background:#13162a;border-right:1px solid #1e2340;display:flex;flex-direction:column;position:fixed;top:0;left:0;height:100vh;z-index:100}
+.sidebar-logo{padding:20px 16px 16px;border-bottom:1px solid #1e2340}
+.sidebar-logo h1{font-size:16px;font-weight:700;color:#fff;letter-spacing:.5px}
+.sidebar-logo span{font-size:11px;color:#5b6396;font-weight:400}
+.sidebar-nav{flex:1;padding:12px 0;overflow-y:auto}
+.nav-item{display:flex;align-items:center;gap:10px;padding:10px 16px;cursor:pointer;color:#8892b0;font-size:13px;font-weight:500;transition:all .2s;border-left:3px solid transparent}
+.nav-item:hover{color:#c4ccf0;background:#1a1d35}
+.nav-item.active{color:#818cf8;background:#1e2240;border-left-color:#818cf8}
+.nav-item .icon{font-size:16px;width:20px;text-align:center}
+.main{margin-left:220px;flex:1;padding:24px;min-height:100vh}
+.page-header{margin-bottom:24px}
+.page-header h2{font-size:22px;font-weight:700;color:#fff}
+.page-header p{font-size:13px;color:#5b6396;margin-top:4px}
+.cards-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;margin-bottom:28px}
+.card{background:#13162a;border:1px solid #1e2340;border-radius:12px;padding:20px}
+.card-label{font-size:12px;color:#5b6396;font-weight:500;text-transform:uppercase;letter-spacing:.5px}
+.card-value{font-size:24px;font-weight:700;color:#fff;margin-top:6px}
+.card-value.green{color:#34d399}.card-value.red{color:#f87171}.card-value.blue{color:#60a5fa}.card-value.yellow{color:#fbbf24}
+.card-sub{font-size:12px;color:#5b6396;margin-top:4px}
+.btn{display:inline-flex;align-items:center;gap:6px;padding:8px 16px;border-radius:8px;border:none;cursor:pointer;font-size:13px;font-weight:600;transition:all .2s}
+.btn-primary{background:#4f46e5;color:#fff}.btn-primary:hover{background:#4338ca}
+.btn-secondary{background:#1e2240;color:#8892b0;border:1px solid #2d3260}.btn-secondary:hover{color:#c4ccf0;background:#252950}
+.btn-danger{background:#7f1d1d;color:#fca5a5}.btn-danger:hover{background:#991b1b}
+.btn-success{background:#065f46;color:#6ee7b7}.btn-success:hover{background:#047857}
+.btn-yellow{background:#78350f;color:#fcd34d}.btn-yellow:hover{background:#92400e}
+.btn-sm{padding:5px 10px;font-size:12px}
+.table-wrap{background:#13162a;border:1px solid #1e2340;border-radius:12px;overflow:hidden}
+table{width:100%;border-collapse:collapse}
+thead{background:#0f1117}
+th{padding:12px 16px;text-align:left;font-size:11px;font-weight:600;color:#5b6396;text-transform:uppercase;letter-spacing:.5px}
+td{padding:11px 16px;font-size:13px;color:#c4ccf0;border-top:1px solid #1a1d35}
+tr:hover td{background:#16192e}
+.badge{display:inline-block;padding:3px 8px;border-radius:20px;font-size:11px;font-weight:600}
+.badge-green{background:#064e3b;color:#6ee7b7}.badge-red{background:#7f1d1d;color:#fca5a5}
+.badge-blue{background:#1e3a5f;color:#93c5fd}.badge-yellow{background:#78350f;color:#fcd34d}
+.badge-purple{background:#3b0764;color:#d8b4fe}.badge-gray{background:#1e2240;color:#8892b0}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:999;display:flex;align-items:center;justify-content:center}
+.modal{background:#13162a;border:1px solid #2d3260;border-radius:16px;padding:28px;width:100%;max-width:500px;max-height:90vh;overflow-y:auto}
+.modal h3{font-size:18px;font-weight:700;color:#fff;margin-bottom:20px}
+.form-group{margin-bottom:16px}
+.form-group label{display:block;font-size:12px;font-weight:600;color:#8892b0;margin-bottom:6px;text-transform:uppercase;letter-spacing:.5px}
+.form-control{width:100%;padding:9px 12px;background:#0f1117;border:1px solid #2d3260;border-radius:8px;color:#e2e8f0;font-size:13px;outline:none;transition:border .2s}
+.form-control:focus{border-color:#818cf8}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.alert{padding:12px 16px;border-radius:8px;font-size:13px;margin-bottom:16px}
+.alert-error{background:#7f1d1d22;border:1px solid #7f1d1d;color:#fca5a5}
+.alert-success{background:#06423422;border:1px solid #065f46;color:#6ee7b7}
+.alert-warn{background:#78350f22;border:1px solid #78350f;color:#fcd34d}
+.loading{display:flex;align-items:center;justify-content:center;padding:40px;color:#5b6396;font-size:14px;gap:10px}
+.spinner{width:18px;height:18px;border:2px solid #2d3260;border-top-color:#818cf8;border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.filters{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center}
+.stock-low{color:#fbbf24}.stock-ok{color:#34d399}.stock-zero{color:#f87171}
+.section-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;flex-wrap:wrap;gap:10px}
+.empty{text-align:center;padding:48px;color:#5b6396;font-size:14px}
+.import-box{background:#0f1117;border:2px dashed #2d3260;border-radius:10px;padding:16px;margin-bottom:16px;text-align:center;cursor:pointer;transition:border .2s}
+.import-box:hover{border-color:#818cf8}
+.import-box p{font-size:13px;color:#5b6396;margin-top:6px}
+.rentab-pos{color:#34d399;font-weight:700}
+.rentab-neg{color:#f87171;font-weight:700}
+.live-dot{width:8px;height:8px;background:#34d399;border-radius:50%;display:inline-block;margin-right:6px;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+@media(max-width:768px){
+  .sidebar{width:60px}
+  .sidebar .nav-item span,.sidebar-logo h1,.sidebar-logo span{display:none}
+  .main{margin-left:60px;padding:16px}
+  .cards-grid{grid-template-columns:1fr 1fr}
+  .form-row{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { createClient } = supabase;
+const SUPABASE_URL = 'https://vuawtrygybmyhduegtjy.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_ujKDBbpGqHM-sBJU80gpmg_aWRNgwsc';
+const db = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+const fmt = v => new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',minimumFractionDigits:0}).format(v||0);
+const fmtDate = d => d ? new Date(d+'T12:00:00').toLocaleDateString('es-AR') : '-';
+const today = () => new Date().toISOString().split('T')[0];
+const CANALES = ['mercadolibre','tiendanube','instagram','whatsapp','mostrador'];
+const CANAL_LABELS = {mercadolibre:'Mercado Libre',tiendanube:'Tienda Nube',instagram:'Instagram',whatsapp:'WhatsApp',mostrador:'Mostrador'};
+const CANAL_COLORS = {mercadolibre:'yellow',tiendanube:'blue',instagram:'purple',whatsapp:'green',mostrador:'gray'};
+
+function Badge({canal}){
+  return <span className={`badge badge-${CANAL_COLORS[canal]||'gray'}`}>{CANAL_LABELS[canal]||canal}</span>;
+}
+function Modal({onClose,children}){
+  return <div className="modal-overlay" onClick={e=>e.target===e.currentTarget&&onClose()}>
+    <div className="modal">{children}</div>
+  </div>;
+}
+
+// ===== IMPORTAR EXCEL =====
+function useExcelImport(onImport){
+  const ref = React.useRef();
+  const handleFile = (e)=>{
+    const file = e.target.files[0];
+    if(!file) return;
+    const reader = new FileReader();
+    reader.onload = ev=>{
+      const wb = XLSX.read(ev.target.result,{type:'binary'});
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws,{defval:''});
+      onImport(rows);
+    };
+    reader.readAsBinaryString(file);
+    e.target.value='';
+  };
+  const openPicker = ()=>ref.current.click();
+  const Input = ()=><input ref={ref} type="file" accept=".xlsx,.xls,.csv" style={{display:'none'}} onChange={handleFile}/>;
+  return {openPicker, Input};
+}
+
+function descargarPlantilla(nombre, columnas){
+  const ws = XLSX.utils.aoa_to_sheet([columnas]);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,ws,'Datos');
+  XLSX.writeFile(wb,`plantilla_${nombre}.xlsx`);
+}
+
+// ===== SETTINGS (costo fijo operativo) =====
+async function getCostoFijo(){
+  const {data} = await db.from('gastos').select('monto').eq('categoria','__costo_fijo__').limit(1);
+  return data&&data.length>0 ? Number(data[0].monto) : 0;
+}
+
+// ===== DASHBOARD =====
+function Dashboard(){
+  const [data,setData] = React.useState(null);
+  const mes = new Date().toISOString().slice(0,7);
+
+  const load = async()=>{
+    const [{data:v},{data:c},{data:g},{data:p}] = await Promise.all([
+      db.from('ventas').select('total,costo_envio,costo_producto').gte('fecha',mes+'-01'),
+      db.from('compras').select('total').gte('fecha',mes+'-01'),
+      db.from('gastos').select('monto,categoria').gte('fecha',mes+'-01'),
+      db.from('productos').select('stock,stock_minimo'),
+    ]);
+    const totalVentas = (v||[]).reduce((a,x)=>a+Number(x.total),0);
+    const totalEnvios = (v||[]).reduce((a,x)=>a+Number(x.costo_envio||0),0);
+    const totalCostosProd = (v||[]).reduce((a,x)=>a+Number(x.costo_producto||0),0);
+    const totalCompras = (c||[]).reduce((a,x)=>a+Number(x.total),0);
+    const gastosNorm = (g||[]).filter(x=>x.categoria!=='__costo_fijo__').reduce((a,x)=>a+Number(x.monto),0);
+    const costoFijoMensual = (g||[]).filter(x=>x.categoria==='__costo_fijo__').reduce((a,x)=>a+Number(x.monto),0);
+    setData({
+      ventas:totalVentas, compras:totalCompras, gastos:gastosNorm,
+      envios:totalEnvios, costosProd:totalCostosProd,
+      costoFijo:costoFijoMensual,
+      ganancia: totalVentas - totalEnvios - totalCostosProd - totalCompras - gastosNorm - costoFijoMensual,
+      stockBajo:(p||[]).filter(x=>x.stock<=x.stock_minimo).length,
+      ventasCount:(v||[]).length,
+    });
+  };
+
+  React.useEffect(()=>{ load(); const iv=setInterval(load,30000); return ()=>clearInterval(iv); },[]);
+
+  if(!data) return <div className="loading"><div className="spinner"/><span>Cargando...</span></div>;
+  return <>
+    <div className="page-header">
+      <h2>📊 Dashboard</h2>
+      <p><span className="live-dot"/>En vivo — {new Date().toLocaleString('es-AR',{month:'long',year:'numeric'})}</p>
+    </div>
+    <div className="cards-grid">
+      <div className="card"><div className="card-label">Ventas del mes</div><div className="card-value green">{fmt(data.ventas)}</div><div className="card-sub">{data.ventasCount} transacciones</div></div>
+      <div className="card"><div className="card-label">Costo de productos</div><div className="card-value red">{fmt(data.costosProd)}</div></div>
+      <div className="card"><div className="card-label">Envíos</div><div className="card-value red">{fmt(data.envios)}</div></div>
+      <div className="card"><div className="card-label">Compras</div><div className="card-value red">{fmt(data.compras)}</div></div>
+      <div className="card"><div className="card-label">Gastos operativos</div><div className="card-value red">{fmt(data.gastos)}</div></div>
+      <div className="card"><div className="card-label">Costo fijo mensual</div><div className="card-value red">{fmt(data.costoFijo)}</div></div>
+      <div className="card"><div className="card-label">Ganancia neta</div><div className={`card-value ${data.ganancia>=0?'green':'red'}`}>{fmt(data.ganancia)}</div></div>
+      <div className="card"><div className="card-label">Stock bajo</div><div className={`card-value ${data.stockBajo>0?'yellow':'green'}`}>{data.stockBajo}</div><div className="card-sub">{data.stockBajo>0?'Revisar':'OK'}</div></div>
+    </div>
+  </>;
+}
+
+// ===== PRODUCTOS =====
+function Productos(){
+  const [items,setItems] = React.useState([]);
+  const [loading,setLoading] = React.useState(true);
+  const [modal,setModal] = React.useState(false);
+  const [form,setForm] = React.useState({nombre:'',sku:'',categoria:'',stock:0,stock_minimo:5,costo:0});
+  const [editId,setEditId] = React.useState(null);
+  const [search,setSearch] = React.useState('');
+  const [msg,setMsg] = React.useState('');
+  const [importMsg,setImportMsg] = React.useState('');
+
+  const load = async()=>{ setLoading(true); const {data}=await db.from('productos').select('*').order('nombre'); setItems(data||[]); setLoading(false); };
+  React.useEffect(()=>{load()},[]);
+
+  const save = async()=>{
+    if(!form.nombre){setMsg('El nombre es obligatorio');return;}
+    const p={...form,stock:Number(form.stock),stock_minimo:Number(form.stock_minimo),costo:Number(form.costo)};
+    if(editId) await db.from('productos').update(p).eq('id',editId);
+    else await db.from('productos').insert(p);
+    setModal(false);setMsg('');setForm({nombre:'',sku:'',categoria:'',stock:0,stock_minimo:5,costo:0});setEditId(null);load();
+  };
+  const del = async(id)=>{ if(!confirm('¿Eliminar?'))return; await db.from('productos').delete().eq('id',id); load(); };
+  const edit = p=>{ setForm({nombre:p.nombre,sku:p.sku||'',categoria:p.categoria||'',stock:p.stock,stock_minimo:p.stock_minimo,costo:p.costo}); setEditId(p.id); setModal(true); };
+
+  const {openPicker,Input} = useExcelImport(async(rows)=>{
+    setImportMsg('Importando...');
+    let ok=0,err=0;
+    for(const r of rows){
+      const nombre = r['nombre']||r['Nombre']||r['NOMBRE']||'';
+      if(!nombre){err++;continue;}
+      await db.from('productos').insert({
+        nombre, sku:r['sku']||r['SKU']||'', categoria:r['categoria']||r['Categoría']||'',
+        stock:Number(r['stock']||r['Stock']||0), stock_minimo:Number(r['stock_minimo']||r['Stock Mínimo']||5),
+        costo:Number(r['costo']||r['Costo']||0),
+      });
+      ok++;
+    }
+    setImportMsg(`✅ ${ok} importados${err>0?`, ${err} errores`:''}`);
+    load();
+  });
+
+  const filtered = items.filter(x=>x.nombre.toLowerCase().includes(search.toLowerCase())||(x.sku||'').toLowerCase().includes(search.toLowerCase()));
+
+  return <>
+    <Input/>
+    <div className="page-header"><h2>📦 Productos & Stock</h2></div>
+    <div className="section-header">
+      <input className="form-control" style={{width:200}} placeholder="Buscar..." value={search} onChange={e=>setSearch(e.target.value)}/>
+      <div style={{display:'flex',gap:8}}>
+        <button className="btn btn-secondary btn-sm" onClick={()=>descargarPlantilla('productos',['nombre','sku','categoria','stock','stock_minimo','costo'])}>⬇ Plantilla</button>
+        <button className="btn btn-yellow btn-sm" onClick={openPicker}>📥 Importar Excel</button>
+        <button className="btn btn-primary" onClick={()=>{setForm({nombre:'',sku:'',categoria:'',stock:0,stock_minimo:5,costo:0});setEditId(null);setModal(true)}}>+ Nuevo</button>
+      </div>
+    </div>
+    {importMsg&&<div className="alert alert-success" style={{marginBottom:12}}>{importMsg}</div>}
+    {loading?<div className="loading"><div className="spinner"/></div>:
+    <div className="table-wrap"><table>
+      <thead><tr><th>Nombre</th><th>SKU</th><th>Categoría</th><th>Stock</th><th>Mín.</th><th>Costo</th><th></th></tr></thead>
+      <tbody>
+        {filtered.length===0?<tr><td colSpan={7}><div className="empty">Sin productos</div></td></tr>:
+        filtered.map(p=><tr key={p.id}>
+          <td style={{fontWeight:600,color:'#fff'}}>{p.nombre}</td>
+          <td style={{color:'#5b6396'}}>{p.sku||'-'}</td>
+          <td>{p.categoria||'-'}</td>
+          <td><span className={p.stock===0?'stock-zero':p.stock<=p.stock_minimo?'stock-low':'stock-ok'}>{p.stock} u.</span></td>
+          <td>{p.stock_minimo}</td>
+          <td>{fmt(p.costo)}</td>
+          <td><button className="btn btn-secondary btn-sm" onClick={()=>edit(p)}>✎</button> <button className="btn btn-danger btn-sm" onClick={()=>del(p.id)}>✕</button></td>
+        </tr>)}
+      </tbody>
+    </table></div>}
+    {modal&&<Modal onClose={()=>{setModal(false);setMsg('');}}>
+      <h3>{editId?'Editar':'Nuevo'} producto</h3>
+      {msg&&<div className="alert alert-error">{msg}</div>}
+      <div className="form-group"><label>Nombre *</label><input className="form-control" value={form.nombre} onChange={e=>setForm({...form,nombre:e.target.value})}/></div>
+      <div className="form-row">
+        <div className="form-group"><label>SKU</label><input className="form-control" value={form.sku} onChange={e=>setForm({...form,sku:e.target.value})}/></div>
+        <div className="form-group"><label>Categoría</label><input className="form-control" value={form.categoria} onChange={e=>setForm({...form,categoria:e.target.value})}/></div>
+      </div>
+      <div className="form-row">
+        <div className="form-group"><label>Stock</label><input type="number" className="form-control" value={form.stock} onChange={e=>setForm({...form,stock:e.target.value})}/></div>
+        <div className="form-group"><label>Stock mínimo</label><input type="number" className="form-control" value={form.stock_minimo} onChange={e=>setForm({...form,stock_minimo:e.target.value})}/></div>
+      </div>
+      <div className="form-group"><label>Costo ($)</label><input type="number" className="form-control" value={form.costo} onChange={e=>setForm({...form,costo:e.target.value})}/></div>
+      <div style={{display:'flex',gap:10}}>
+        <button className="btn btn-primary" style={{flex:1}} onClick={save}>Guardar</button>
+        <button className="btn btn-secondary" onClick={()=>{setModal(false);setMsg('');}}>Cancelar</button>
+      </div>
+    </Modal>}
+  </>;
+}
+
+// ===== COMPRAS =====
+function Compras(){
+  const [items,setItems] = React.useState([]);
+  const [productos,setProductos] = React.useState([]);
+  const [loading,setLoading] = React.useState(true);
+  const [modal,setModal] = React.useState(false);
+  const [form,setForm] = React.useState({producto_id:'',producto_nombre:'',cantidad:1,costo_unitario:0,proveedor:'',fecha:today(),notas:''});
+  const [msg,setMsg] = React.useState('');
+  const [importMsg,setImportMsg] = React.useState('');
+
+  const load = async()=>{ setLoading(true); const [{data:c},{data:p}]=await Promise.all([db.from('compras').select('*').order('fecha',{ascending:false}),db.from('productos').select('id,nombre,costo,stock').order('nombre')]); setItems(c||[]); setProductos(p||[]); setLoading(false); };
+  React.useEffect(()=>{load()},[]);
+
+  const save = async()=>{
+    if(!form.cantidad||!form.costo_unitario){setMsg('Completá cantidad y costo');return;}
+    const nombre = form.producto_id?(productos.find(p=>p.id===form.producto_id)||{}).nombre||form.producto_nombre:form.producto_nombre;
+    await db.from('compras').insert({producto_id:form.producto_id||null,producto_nombre:nombre,cantidad:Number(form.cantidad),costo_unitario:Number(form.costo_unitario),proveedor:form.proveedor,fecha:form.fecha,notas:form.notas});
+    if(form.producto_id){const prod=productos.find(p=>p.id===form.producto_id);if(prod)await db.from('productos').update({stock:prod.stock+Number(form.cantidad),costo:Number(form.costo_unitario)}).eq('id',form.producto_id);}
+    setModal(false);setMsg('');setForm({producto_id:'',producto_nombre:'',cantidad:1,costo_unitario:0,proveedor:'',fecha:today(),notas:''});load();
+  };
+  const del = async(id)=>{ if(!confirm('¿Eliminar?'))return; await db.from('compras').delete().eq('id',id); load(); };
+
+  const {openPicker,Input} = useExcelImport(async(rows)=>{
+    setImportMsg('Importando...');let ok=0;
+    for(const r of rows){
+      await db.from('compras').insert({
+        producto_nombre:r['producto']||r['Producto']||'Sin nombre',
+        cantidad:Number(r['cantidad']||r['Cantidad']||1),
+        costo_unitario:Number(r['costo_unitario']||r['Costo Unitario']||0),
+        proveedor:r['proveedor']||r['Proveedor']||'',
+        fecha:r['fecha']||r['Fecha']||today(),
+        notas:r['notas']||r['Notas']||'',
+      });ok++;
+    }
+    setImportMsg(`✅ ${ok} compras importadas`);load();
+  });
+
+  return <>
+    <Input/>
+    <div className="page-header"><h2>🛒 Compras</h2></div>
+    <div className="section-header">
+      <span style={{color:'#5b6396',fontSize:13}}>{items.length} registros</span>
+      <div style={{display:'flex',gap:8}}>
+        <button className="btn btn-secondary btn-sm" onClick={()=>descargarPlantilla('compras',['producto','cantidad','costo_unitario','proveedor','fecha','notas'])}>⬇ Plantilla</button>
+        <button className="btn btn-yellow btn-sm" onClick={openPicker}>📥 Importar Excel</button>
+        <button className="btn btn-primary" onClick={()=>setModal(true)}>+ Nueva</button>
+      </div>
+    </div>
+    {importMsg&&<div className="alert alert-success" style={{marginBottom:12}}>{importMsg}</div>}
+    {loading?<div className="loading"><div className="spinner"/></div>:
+    <div className="table-wrap"><table>
+      <thead><tr><th>Fecha</th><th>Producto</th><th>Cant.</th><th>Costo unit.</th><th>Total</th><th>Proveedor</th><th></th></tr></thead>
+      <tbody>
+        {items.length===0?<tr><td colSpan={7}><div className="empty">Sin compras</div></td></tr>:
+        items.map(c=><tr key={c.id}>
+          <td>{fmtDate(c.fecha)}</td><td style={{fontWeight:600,color:'#fff'}}>{c.producto_nombre||'-'}</td>
+          <td>{c.cantidad}</td><td>{fmt(c.costo_unitario)}</td>
+          <td style={{color:'#f87171',fontWeight:600}}>{fmt(c.total)}</td>
+          <td>{c.proveedor||'-'}</td>
+          <td><button className="btn btn-danger btn-sm" onClick={()=>del(c.id)}>✕</button></td>
+        </tr>)}
+      </tbody>
+    </table></div>}
+    {modal&&<Modal onClose={()=>{setModal(false);setMsg('');}}>
+      <h3>Nueva compra</h3>
+      {msg&&<div className="alert alert-error">{msg}</div>}
+      <div className="form-group"><label>Producto</label>
+        <select className="form-control" value={form.producto_id} onChange={e=>{const p=productos.find(x=>x.id===e.target.value);setForm({...form,producto_id:e.target.value,costo_unitario:p?p.costo:form.costo_unitario});}}>
+          <option value="">— Manual —</option>{productos.map(p=><option key={p.id} value={p.id}>{p.nombre}</option>)}
+        </select>
+      </div>
+      {!form.producto_id&&<div className="form-group"><label>Nombre manual</label><input className="form-control" value={form.producto_nombre} onChange={e=>setForm({...form,producto_nombre:e.target.value})}/></div>}
+      <div className="form-row">
+        <div className="form-group"><label>Cantidad</label><input type="number" className="form-control" value={form.cantidad} onChange={e=>setForm({...form,cantidad:e.target.value})}/></div>
+        <div className="form-group"><label>Costo unit. ($)</label><input type="number" className="form-control" value={form.costo_unitario} onChange={e=>setForm({...form,costo_unitario:e.target.value})}/></div>
+      </div>
+      <div className="form-row">
+        <div className="form-group"><label>Proveedor</label><input className="form-control" value={form.proveedor} onChange={e=>setForm({...form,proveedor:e.target.value})}/></div>
+        <div className="form-group"><label>Fecha</label><input type="date" className="form-control" value={form.fecha} onChange={e=>setForm({...form,fecha:e.target.value})}/></div>
+      </div>
+      {form.cantidad&&form.costo_unitario?<div className="alert alert-success">Total: {fmt(form.cantidad*form.costo_unitario)}</div>:null}
+      <div style={{display:'flex',gap:10,marginTop:8}}>
+        <button className="btn btn-primary" style={{flex:1}} onClick={save}>Guardar</button>
+        <button className="btn btn-secondary" onClick={()=>{setModal(false);setMsg('');}}>Cancelar</button>
+      </div>
+    </Modal>}
+  </>;
+}
+
+// ===== VENTAS =====
+function Ventas(){
+  const [items,setItems] = React.useState([]);
+  const [productos,setProductos] = React.useState([]);
+  const [loading,setLoading] = React.useState(true);
+  const [modal,setModal] = React.useState(false);
+  const [filtroCanal,setFiltroCanal] = React.useState('');
+  const [form,setForm] = React.useState({producto_id:'',producto_nombre:'',cantidad:1,precio_unitario:0,costo_envio:0,costo_producto:0,canal:'mostrador',fecha:today(),notas:''});
+  const [msg,setMsg] = React.useState('');
+  const [importMsg,setImportMsg] = React.useState('');
+
+  const load = async()=>{ setLoading(true); const [{data:v},{data:p}]=await Promise.all([db.from('ventas').select('*').order('fecha',{ascending:false}),db.from('productos').select('id,nombre,stock,costo').order('nombre')]); setItems(v||[]); setProductos(p||[]); setLoading(false); };
+  React.useEffect(()=>{load()},[]);
+
+  const save = async()=>{
+    if(!form.cantidad||!form.precio_unitario){setMsg('Completá cantidad y precio');return;}
+    const nombre = form.producto_id?(productos.find(p=>p.id===form.producto_id)||{}).nombre||form.producto_nombre:form.producto_nombre;
+    const costoProd = form.producto_id?(productos.find(p=>p.id===form.producto_id)||{}).costo||0:Number(form.costo_producto);
+    await db.from('ventas').insert({producto_id:form.producto_id||null,producto_nombre:nombre,cantidad:Number(form.cantidad),precio_unitario:Number(form.precio_unitario),costo_envio:Number(form.costo_envio||0),costo_producto:costoProd*Number(form.cantidad),canal:form.canal,fecha:form.fecha,notas:form.notas});
+    if(form.producto_id){const prod=productos.find(p=>p.id===form.producto_id);if(prod)await db.from('productos').update({stock:Math.max(0,prod.stock-Number(form.cantidad))}).eq('id',form.producto_id);}
+    setModal(false);setMsg('');setForm({producto_id:'',producto_nombre:'',cantidad:1,precio_unitario:0,costo_envio:0,costo_producto:0,canal:'mostrador',fecha:today(),notas:''});load();
+  };
+  const del = async(id)=>{ if(!confirm('¿Eliminar?'))return; await db.from('ventas').delete().eq('id',id); load(); };
+
+  const {openPicker,Input} = useExcelImport(async(rows)=>{
+    setImportMsg('Importando...');let ok=0;
+    for(const r of rows){
+      await db.from('ventas').insert({
+        producto_nombre:r['producto']||r['Producto']||'Sin nombre',
+        cantidad:Number(r['cantidad']||1),precio_unitario:Number(r['precio_unitario']||0),
+        costo_envio:Number(r['costo_envio']||0),costo_producto:Number(r['costo_producto']||0),
+        canal:r['canal']||'mostrador',fecha:r['fecha']||today(),notas:r['notas']||'',
+      });ok++;
+    }
+    setImportMsg(`✅ ${ok} ventas importadas`);load();
+  });
+
+  const filtered = filtroCanal?items.filter(x=>x.canal===filtroCanal):items;
+  const totalVentas = filtered.reduce((a,x)=>a+Number(x.total),0);
+  const totalEnvios = filtered.reduce((a,x)=>a+Number(x.costo_envio||0),0);
+  const totalCostos = filtered.reduce((a,x)=>a+Number(x.costo_producto||0),0);
+
+  return <>
+    <Input/>
+    <div className="page-header"><h2>💰 Ventas</h2></div>
+    <div className="filters">
+      <select className="form-control" style={{width:160}} value={filtroCanal} onChange={e=>setFiltroCanal(e.target.value)}>
+        <option value="">Todos los canales</option>
+        {CANALES.map(c=><option key={c} value={c}>{CANAL_LABELS[c]}</option>)}
+      </select>
+      <div style={{marginLeft:'auto',display:'flex',gap:8,alignItems:'center'}}>
+        {filtroCanal&&<span style={{color:'#34d399',fontWeight:700,fontSize:13}}>{fmt(totalVentas)}</span>}
+        <button className="btn btn-secondary btn-sm" onClick={()=>descargarPlantilla('ventas',['producto','cantidad','precio_unitario','costo_envio','costo_producto','canal','fecha','notas'])}>⬇ Plantilla</button>
+        <button className="btn btn-yellow btn-sm" onClick={openPicker}>📥 Importar</button>
+        <button className="btn btn-primary" onClick={()=>setModal(true)}>+ Nueva</button>
+      </div>
+    </div>
+    {filtroCanal&&<div className="cards-grid" style={{marginBottom:16}}>
+      <div className="card"><div className="card-label">Ingresos</div><div className="card-value green">{fmt(totalVentas)}</div></div>
+      <div className="card"><div className="card-label">Costo productos</div><div className="card-value red">{fmt(totalCostos)}</div></div>
+      <div className="card"><div className="card-label">Costo envíos</div><div className="card-value red">{fmt(totalEnvios)}</div></div>
+      <div className="card"><div className="card-label">Margen bruto</div><div className={`card-value ${totalVentas-totalCostos-totalEnvios>=0?'green':'red'}`}>{fmt(totalVentas-totalCostos-totalEnvios)}</div></div>
+    </div>}
+    {importMsg&&<div className="alert alert-success" style={{marginBottom:12}}>{importMsg}</div>}
+    {loading?<div className="loading"><div className="spinner"/></div>:
+    <div className="table-wrap"><table>
+      <thead><tr><th>Fecha</th><th>Producto</th><th>Canal</th><th>Cant.</th><th>Precio</th><th>Envío</th><th>Costo prod.</th><th>Rentabilidad</th><th></th></tr></thead>
+      <tbody>
+        {filtered.length===0?<tr><td colSpan={9}><div className="empty">Sin ventas</div></td></tr>:
+        filtered.map(v=>{
+          const ingreso=Number(v.total);const costos=Number(v.costo_envio||0)+Number(v.costo_producto||0);const rentab=ingreso-costos;
+          return <tr key={v.id}>
+            <td>{fmtDate(v.fecha)}</td>
+            <td style={{fontWeight:600,color:'#fff'}}>{v.producto_nombre||'-'}</td>
+            <td><Badge canal={v.canal}/></td>
+            <td>{v.cantidad}</td>
+            <td style={{color:'#34d399'}}>{fmt(v.precio_unitario)}</td>
+            <td style={{color:'#f87171'}}>{v.costo_envio>0?fmt(v.costo_envio):'-'}</td>
+            <td style={{color:'#f87171'}}>{v.costo_producto>0?fmt(v.costo_producto):'-'}</td>
+            <td><span className={rentab>=0?'rentab-pos':'rentab-neg'}>{fmt(rentab)}</span></td>
+            <td><button className="btn btn-danger btn-sm" onClick={()=>del(v.id)}>✕</button></td>
+          </tr>;
+        })}
+      </tbody>
+    </table></div>}
+    {modal&&<Modal onClose={()=>{setModal(false);setMsg('');}}>
+      <h3>Nueva venta</h3>
+      {msg&&<div className="alert alert-error">{msg}</div>}
+      <div className="form-group"><label>Producto</label>
+        <select className="form-control" value={form.producto_id} onChange={e=>{const p=productos.find(x=>x.id===e.target.value);setForm({...form,producto_id:e.target.value,costo_producto:p?p.costo:0});}}>
+          <option value="">— Manual —</option>{productos.map(p=><option key={p.id} value={p.id}>{p.nombre} (stock:{p.stock})</option>)}
+        </select>
+      </div>
+      {!form.producto_id&&<div className="form-group"><label>Nombre manual</label><input className="form-control" value={form.producto_nombre} onChange={e=>setForm({...form,producto_nombre:e.target.value})}/></div>}
+      <div className="form-row">
+        <div className="form-group"><label>Cantidad</label><input type="number" className="form-control" value={form.cantidad} onChange={e=>setForm({...form,cantidad:e.target.value})}/></div>
+        <div className="form-group"><label>Precio unit. ($)</label><input type="number" className="form-control" value={form.precio_unitario} onChange={e=>setForm({...form,precio_unitario:e.target.value})}/></div>
+      </div>
+      <div className="form-row">
+        <div className="form-group"><label>Costo envío ($)</label><input type="number" className="form-control" value={form.costo_envio} onChange={e=>setForm({...form,costo_envio:e.target.value})}/></div>
+        <div className="form-group"><label>Costo producto ($)</label><input type="number" className="form-control" value={form.costo_producto} onChange={e=>setForm({...form,costo_producto:e.target.value})} placeholder="Auto si elegís producto"/></div>
+      </div>
+      <div className="form-row">
+        <div className="form-group"><label>Canal</label>
+          <select className="form-control" value={form.canal} onChange={e=>setForm({...form,canal:e.target.value})}>
+            {CANALES.map(c=><option key={c} value={c}>{CANAL_LABELS[c]}</option>)}
+          </select>
+        </div>
+        <div className="form-group"><label>Fecha</label><input type="date" className="form-control" value={form.fecha} onChange={e=>setForm({...form,fecha:e.target.value})}/></div>
+      </div>
+      {form.cantidad&&form.precio_unitario&&<div className="alert alert-success">
+        Ingreso: {fmt(form.cantidad*form.precio_unitario)} | Rentab: {fmt(form.cantidad*form.precio_unitario - Number(form.costo_envio||0) - Number(form.costo_producto||0)*Number(form.cantidad))}
+      </div>}
+      <div style={{display:'flex',gap:10}}>
+        <button className="btn btn-primary" style={{flex:1}} onClick={save}>Guardar</button>
+        <button className="btn btn-secondary" onClick={()=>{setModal(false);setMsg('');}}>Cancelar</button>
+      </div>
+    </Modal>}
+  </>;
+}
+
+// ===== GASTOS =====
+function Gastos(){
+  const [items,setItems] = React.useState([]);
+  const [costoFijo,setCostoFijo] = React.useState(0);
+  const [editCF,setEditCF] = React.useState(false);
+  const [newCF,setNewCF] = React.useState(0);
+  const [loading,setLoading] = React.useState(true);
+  const [modal,setModal] = React.useState(false);
+  const [form,setForm] = React.useState({descripcion:'',monto:0,categoria:'',fecha:today(),notas:''});
+  const [msg,setMsg] = React.useState('');
+  const [importMsg,setImportMsg] = React.useState('');
+  const CATS = ['Envíos','Comisiones','Publicidad','Alquiler','Servicios','Personal','Otros'];
+
+  const load = async()=>{
+    setLoading(true);
+    const {data}=await db.from('gastos').select('*').order('fecha',{ascending:false});
+    const todos=data||[];
+    setItems(todos.filter(x=>x.categoria!=='__costo_fijo__'));
+    const cf=todos.find(x=>x.categoria==='__costo_fijo__');
+    setCostoFijo(cf?Number(cf.monto):0);
+    setLoading(false);
+  };
+  React.useEffect(()=>{load()},[]);
+
+  const saveCF = async()=>{
+    const {data:existing}=await db.from('gastos').select('id').eq('categoria','__costo_fijo__').limit(1);
+    if(existing&&existing.length>0) await db.from('gastos').update({monto:Number(newCF),descripcion:'Costo fijo operativo mensual'}).eq('id',existing[0].id);
+    else await db.from('gastos').insert({descripcion:'Costo fijo operativo mensual',monto:Number(newCF),categoria:'__costo_fijo__',fecha:today()});
+    setEditCF(false);load();
+  };
+
+  const save = async()=>{
+    if(!form.descripcion||!form.monto){setMsg('Completá descripción y monto');return;}
+    await db.from('gastos').insert({...form,monto:Number(form.monto)});
+    setModal(false);setMsg('');setForm({descripcion:'',monto:0,categoria:'',fecha:today(),notas:''});load();
+  };
+  const del = async(id)=>{ if(!confirm('¿Eliminar?'))return; await db.from('gastos').delete().eq('id',id); load(); };
+
+  const {openPicker,Input} = useExcelImport(async(rows)=>{
+    setImportMsg('Importando...');let ok=0;
+    for(const r of rows){
+      await db.from('gastos').insert({
+        descripcion:r['descripcion']||r['Descripción']||'Sin descripción',
+        monto:Number(r['monto']||r['Monto']||0),
+        categoria:r['categoria']||r['Categoría']||'',
+        fecha:r['fecha']||r['Fecha']||today(),
+        notas:r['notas']||'',
+      });ok++;
+    }
+    setImportMsg(`✅ ${ok} gastos importados`);load();
+  });
+
+  const total = items.reduce((a,x)=>a+Number(x.monto),0);
+
+  return <>
+    <Input/>
+    <div className="page-header"><h2>💸 Gastos</h2></div>
+
+    {/* Costo fijo operativo */}
+    <div className="card" style={{marginBottom:20,maxWidth:440}}>
+      <div className="card-label" style={{marginBottom:8}}>⚙️ Costo fijo operativo mensual</div>
+      {editCF
+        ? <div style={{display:'flex',gap:8,alignItems:'center'}}>
+            <input type="number" className="form-control" value={newCF} onChange={e=>setNewCF(e.target.value)} style={{flex:1}}/>
+            <button className="btn btn-primary btn-sm" onClick={saveCF}>Guardar</button>
+            <button className="btn btn-secondary btn-sm" onClick={()=>setEditCF(false)}>✕</button>
+          </div>
+        : <div style={{display:'flex',alignItems:'center',gap:12}}>
+            <span style={{fontSize:22,fontWeight:700,color:'#f87171'}}>{fmt(costoFijo)}</span>
+            <button className="btn btn-secondary btn-sm" onClick={()=>{setNewCF(costoFijo);setEditCF(true);}}>Editar</button>
+          </div>
+      }
+      <div style={{fontSize:11,color:'#5b6396',marginTop:6}}>Se descuenta automáticamente en el Dashboard</div>
+    </div>
+
+    <div className="section-header">
+      <span style={{color:'#f87171',fontWeight:700}}>Total gastos: {fmt(total)}</span>
+      <div style={{display:'flex',gap:8}}>
+        <button className="btn btn-secondary btn-sm" onClick={()=>descargarPlantilla('gastos',['descripcion','monto','categoria','fecha','notas'])}>⬇ Plantilla</button>
+        <button className="btn btn-yellow btn-sm" onClick={openPicker}>📥 Importar</button>
+        <button className="btn btn-primary" onClick={()=>setModal(true)}>+ Nuevo</button>
+      </div>
+    </div>
+    {importMsg&&<div className="alert alert-success" style={{marginBottom:12}}>{importMsg}</div>}
+    {loading?<div className="loading"><div className="spinner"/></div>:
+    <div className="table-wrap"><table>
+      <thead><tr><th>Fecha</th><th>Descripción</th><th>Categoría</th><th>Monto</th><th></th></tr></thead>
+      <tbody>
+        {items.length===0?<tr><td colSpan={5}><div className="empty">Sin gastos</div></td></tr>:
+        items.map(g=><tr key={g.id}>
+          <td>{fmtDate(g.fecha)}</td>
+          <td style={{fontWeight:600,color:'#fff'}}>{g.descripcion}</td>
+          <td>{g.categoria?<span className="badge badge-gray">{g.categoria}</span>:'-'}</td>
+          <td style={{color:'#f87171',fontWeight:600}}>{fmt(g.monto)}</td>
+          <td><button className="btn btn-danger btn-sm" onClick={()=>del(g.id)}>✕</button></td>
+        </tr>)}
+      </tbody>
+    </table></div>}
+    {modal&&<Modal onClose={()=>{setModal(false);setMsg('');}}>
+      <h3>Nuevo gasto</h3>
+      {msg&&<div className="alert alert-error">{msg}</div>}
+      <div className="form-group"><label>Descripción *</label><input className="form-control" value={form.descripcion} onChange={e=>setForm({...form,descripcion:e.target.value})}/></div>
+      <div className="form-row">
+        <div className="form-group"><label>Monto ($)</label><input type="number" className="form-control" value={form.monto} onChange={e=>setForm({...form,monto:e.target.value})}/></div>
+        <div className="form-group"><label>Categoría</label>
+          <select className="form-control" value={form.categoria} onChange={e=>setForm({...form,categoria:e.target.value})}>
+            <option value="">Sin categoría</option>{CATS.map(c=><option key={c} value={c}>{c}</option>)}
+          </select>
+        </div>
+      </div>
+      <div className="form-group"><label>Fecha</label><input type="date" className="form-control" value={form.fecha} onChange={e=>setForm({...form,fecha:e.target.value})}/></div>
+      <div style={{display:'flex',gap:10}}>
+        <button className="btn btn-primary" style={{flex:1}} onClick={save}>Guardar</button>
+        <button className="btn btn-secondary" onClick={()=>{setModal(false);setMsg('');}}>Cancelar</button>
+      </div>
+    </Modal>}
+  </>;
+}
+
+// ===== PRECIOS =====
+function Precios(){
+  const [productos,setProductos] = React.useState([]);
+  const [precios,setPrecios] = React.useState([]);
+  const [loading,setLoading] = React.useState(true);
+  const [modal,setModal] = React.useState(false);
+  const [selProd,setSelProd] = React.useState(null);
+  const [formPrecios,setFormPrecios] = React.useState({});
+  const [importMsg,setImportMsg] = React.useState('');
+
+  const load = async()=>{ setLoading(true); const [{data:p},{data:pc}]=await Promise.all([db.from('productos').select('*').order('nombre'),db.from('precios_canal').select('*')]); setProductos(p||[]); setPrecios(pc||[]); setLoading(false); };
+  React.useEffect(()=>{load()},[]);
+
+  const openModal = prod=>{ setSelProd(prod); const fp={}; CANALES.forEach(c=>{const pc=precios.find(x=>x.producto_id===prod.id&&x.canal===c);fp[c]=pc?pc.precio:0;}); setFormPrecios(fp); setModal(true); };
+  const save = async()=>{ for(const canal of CANALES){const ex=precios.find(x=>x.producto_id===selProd.id&&x.canal===canal);if(ex)await db.from('precios_canal').update({precio:Number(formPrecios[canal]),updated_at:new Date().toISOString()}).eq('id',ex.id);else await db.from('precios_canal').insert({producto_id:selProd.id,canal,precio:Number(formPrecios[canal])});} setModal(false);load(); };
+  const getPrecio = (pid,canal)=>{ const pc=precios.find(x=>x.producto_id===pid&&x.canal===canal); return pc?fmt(pc.precio):'-'; };
+
+  const {openPicker,Input} = useExcelImport(async(rows)=>{
+    setImportMsg('Importando...');let ok=0;
+    for(const r of rows){
+      const nombre=r['producto']||r['Producto']||'';
+      const prod=productos.find(p=>p.nombre.toLowerCase()===nombre.toLowerCase());
+      if(!prod) continue;
+      for(const canal of CANALES){
+        const precio=Number(r[canal]||r[CANAL_LABELS[canal]]||0);
+        if(!precio) continue;
+        const ex=precios.find(x=>x.producto_id===prod.id&&x.canal===canal);
+        if(ex) await db.from('precios_canal').update({precio,updated_at:new Date().toISOString()}).eq('id',ex.id);
+        else await db.from('precios_canal').insert({producto_id:prod.id,canal,precio});
+        ok++;
+      }
+    }
+    setImportMsg(`✅ ${ok} precios actualizados`);load();
+  });
+
+  return <>
+    <Input/>
+    <div className="page-header"><h2>🏷️ Precios por canal</h2></div>
+    <div className="section-header">
+      <span/>
+      <div style={{display:'flex',gap:8}}>
+        <button className="btn btn-secondary btn-sm" onClick={()=>descargarPlantilla('precios',['producto','mercadolibre','tiendanube','instagram','whatsapp','mostrador'])}>⬇ Plantilla</button>
+        <button className="btn btn-yellow btn-sm" onClick={openPicker}>📥 Importar</button>
+      </div>
+    </div>
+    {importMsg&&<div className="alert alert-success" style={{marginBottom:12}}>{importMsg}</div>}
+    {loading?<div className="loading"><div className="spinner"/></div>:
+    <div className="table-wrap"><table>
+      <thead><tr><th>Producto</th><th>Costo</th>{CANALES.map(c=><th key={c}>{CANAL_LABELS[c]}</th>)}<th></th></tr></thead>
+      <tbody>
+        {productos.length===0?<tr><td colSpan={8}><div className="empty">Sin productos</div></td></tr>:
+        productos.map(p=><tr key={p.id}>
+          <td style={{fontWeight:600,color:'#fff'}}>{p.nombre}</td>
+          <td>{fmt(p.costo)}</td>
+          {CANALES.map(c=><td key={c}>{getPrecio(p.id,c)}</td>)}
+          <td><button className="btn btn-secondary btn-sm" onClick={()=>openModal(p)}>Editar</button></td>
+        </tr>)}
+      </tbody>
+    </table></div>}
+    {modal&&selProd&&<Modal onClose={()=>setModal(false)}>
+      <h3>Precios — {selProd.nombre}</h3>
+      <div className="alert alert-success" style={{marginBottom:16}}>Costo: {fmt(selProd.costo)}</div>
+      {CANALES.map(c=>{ const precio=Number(formPrecios[c]||0);const margen=selProd.costo>0?((precio-selProd.costo)/selProd.costo*100).toFixed(1):0;
+        return <div className="form-group" key={c}>
+          <label>{CANAL_LABELS[c]} {precio>0&&<span style={{color:margen>0?'#34d399':'#f87171',fontSize:11,fontWeight:600}}>({margen>0?'+':''}{margen}%)</span>}</label>
+          <input type="number" className="form-control" value={formPrecios[c]||0} onChange={e=>setFormPrecios({...formPrecios,[c]:e.target.value})}/>
+        </div>;
+      })}
+      <div style={{display:'flex',gap:10}}>
+        <button className="btn btn-primary" style={{flex:1}} onClick={save}>Guardar</button>
+        <button className="btn btn-secondary" onClick={()=>setModal(false)}>Cancelar</button>
+      </div>
+    </Modal>}
+  </>;
+}
+
+// ===== STOCK EN VIVO =====
+function StockVivo(){
+  const [items,setItems] = React.useState([]);
+  const [loading,setLoading] = React.useState(true);
+  const [lastUpdate,setLastUpdate] = React.useState(null);
+
+  const load = async()=>{
+    const {data:prods}=await db.from('productos').select('*').order('nombre');
+    setItems(prods||[]);
+    setLastUpdate(new Date());
+    setLoading(false);
+  };
+
+  // Suscripción realtime a cambios en productos, compras y ventas
+  React.useEffect(()=>{
+    load();
+    const ch1 = db.channel('stock-realtime')
+      .on('postgres_changes',{event:'*',schema:'public',table:'productos'},()=>load())
+      .on('postgres_changes',{event:'INSERT',schema:'public',table:'ventas'},()=>load())
+      .on('postgres_changes',{event:'INSERT',schema:'public',table:'compras'},()=>load())
+      .subscribe();
+    return ()=>db.removeChannel(ch1);
+  },[]);
+
+  const stockTotal = items.reduce((a,x)=>a+x.stock,0);
+  const bajoStock = items.filter(x=>x.stock<=x.stock_minimo&&x.stock>0);
+  const sinStock = items.filter(x=>x.stock===0);
+
+  return <>
+    <div className="page-header">
+      <h2>📡 Stock en vivo</h2>
+      <p><span className="live-dot"/>Actualización en tiempo real{lastUpdate&&` — ${lastUpdate.toLocaleTimeString('es-AR')}`}</p>
+    </div>
+    <div className="cards-grid" style={{marginBottom:20}}>
+      <div className="card"><div className="card-label">Total productos</div><div className="card-value blue">{items.length}</div></div>
+      <div className="card"><div className="card-label">Unidades totales</div><div className="card-value green">{stockTotal}</div></div>
+      <div className="card"><div className="card-label">Stock bajo</div><div className={`card-value ${bajoStock.length>0?'yellow':'green'}`}>{bajoStock.length}</div></div>
+      <div className="card"><div className="card-label">Sin stock</div><div className={`card-value ${sinStock.length>0?'red':'green'}`}>{sinStock.length}</div></div>
+    </div>
+    {loading?<div className="loading"><div className="spinner"/></div>:
+    <div className="table-wrap"><table>
+      <thead><tr><th>Producto</th><th>SKU</th><th>Categoría</th><th>Stock actual</th><th>Stock mínimo</th><th>Estado</th><th>Costo</th></tr></thead>
+      <tbody>
+        {items.length===0?<tr><td colSpan={7}><div className="empty">Sin productos</div></td></tr>:
+        items.map(p=>{
+          const estado = p.stock===0?{label:'Sin stock',cls:'badge-red'}:p.stock<=p.stock_minimo?{label:'Stock bajo',cls:'badge-yellow'}:{label:'OK',cls:'badge-green'};
+          return <tr key={p.id}>
+            <td style={{fontWeight:600,color:'#fff'}}>{p.nombre}</td>
+            <td style={{color:'#5b6396'}}>{p.sku||'-'}</td>
+            <td>{p.categoria||'-'}</td>
+            <td><span className={p.stock===0?'stock-zero':p.stock<=p.stock_minimo?'stock-low':'stock-ok'} style={{fontSize:16,fontWeight:700}}>{p.stock}</span> u.</td>
+            <td style={{color:'#5b6396'}}>{p.stock_minimo} u.</td>
+            <td><span className={`badge ${estado.cls}`}>{estado.label}</span></td>
+            <td>{fmt(p.costo)}</td>
+          </tr>;
+        })}
+      </tbody>
+    </table></div>}
+  </>;
+}
+
+// ===== MERCADO LIBRE =====
+function MercadoLibre(){
+  const [clientId,setClientId] = React.useState(()=>localStorage.getItem('ml_client_id')||'');
+  const [conectado,setConectado] = React.useState(false);
+  const [orders,setOrders] = React.useState([]);
+  const [loading,setLoading] = React.useState(false);
+  const [importing,setImporting] = React.useState(false);
+  const [msg,setMsg] = React.useState('');
+  const [msgType,setMsgType] = React.useState('success');
+  const BASE = window.location.origin;
+
+  React.useEffect(()=>{
+    const p = new URLSearchParams(window.location.search);
+    if(p.get('ml_connected')==='1'){ window.history.replaceState({},'',window.location.pathname); setConectado(true); showMsg('¡Conectado! El token se renueva automáticamente.','success'); }
+    if(p.get('ml_error')){ showMsg('Error: '+p.get('ml_error'),'error'); window.history.replaceState({},'',window.location.pathname); }
+    fetch(`${BASE}/api/ml-orders`).then(r=>{ if(r.ok) setConectado(true); }).catch(()=>{});
+  },[]);
+
+  const showMsg=(m,t='success')=>{setMsg(m);setMsgType(t);};
+  const conectar=()=>{ if(!clientId){showMsg('Ingresá tu Client ID','error');return;} localStorage.setItem('ml_client_id',clientId); window.location.href=`https://auth.mercadolibre.com.ar/authorization?response_type=code&client_id=${clientId}&redirect_uri=${encodeURIComponent(BASE+'/api/ml-callback')}`; };
+
+  const traerOrdenes=async()=>{
+    setLoading(true);setMsg('');
+    try{
+      const r=await fetch(`${BASE}/api/ml-orders`);const d=await r.json();
+      if(d.error){setConectado(false);showMsg(r.status===401?'Sesión vencida. Volvé a autorizar.':'Error: '+d.message,'error');setOrders([]);}
+      else{setConectado(true);setOrders(d.orders||[]);showMsg(`${d.orders?.length||0} órdenes encontradas`,'success');}
+    }catch(e){showMsg('Error de conexión','error');}
+    setLoading(false);
+  };
+
+  const importarTodas=async()=>{
+    if(!orders.length){showMsg('Sincronizá primero','warn');return;}
+    setImporting(true);setMsg('');let imp=0,dup=0;
+    for(const order of orders){
+      const {data:ex}=await db.from('ventas').select('id').eq('ml_order_id',String(order.id)).limit(1);
+      if(ex&&ex.length>0){dup++;continue;}
+      for(const item of order.order_items||[]){
+        await db.from('ventas').insert({
+          producto_nombre:item.item?.title||'ML',cantidad:item.quantity||1,
+          precio_unitario:item.unit_price||0,
+          costo_envio:Number(order.shipping?.cost||0),
+          canal:'mercadolibre',ml_order_id:String(order.id),
+          fecha:order.date_created?.split('T')[0]||today(),
+        });
+      }
+      imp++;
+    }
+    setImporting(false);
+    showMsg(`✅ ${imp} importadas${dup>0?` (${dup} ya existían)`:''}`, 'success');
+  };
+
+  return <>
+    <div className="page-header"><h2>🟡 Mercado Libre</h2><p>Sincronización automática de órdenes</p></div>
+    {msg&&<div className={`alert alert-${msgType}`}>{msg}</div>}
+    <div className="card" style={{marginBottom:20,maxWidth:520}}>
+      <div className="card-label" style={{marginBottom:12}}>Conexión</div>
+      {conectado
+        ?<div style={{padding:'12px',background:'#064e3b',border:'1px solid #065f46',borderRadius:8,color:'#6ee7b7',fontWeight:600,marginBottom:8}}>✓ Sesión activa — token automático</div>
+        :<><div className="form-group"><label>Client ID</label><input className="form-control" value={clientId} onChange={e=>setClientId(e.target.value)} placeholder="Ej: 7692918477883565"/></div>
+          <button className="btn btn-primary" onClick={conectar} style={{width:'100%'}}>🟡 Autorizar con Mercado Libre</button></>
+      }
+      {conectado&&<button className="btn btn-secondary btn-sm" style={{marginTop:8}} onClick={()=>{setConectado(false);setOrders([]);}}>Reconectar</button>}
+    </div>
+    <div className="section-header">
+      <span style={{color:'#5b6396',fontSize:13}}>{orders.length} órdenes</span>
+      <div style={{display:'flex',gap:8}}>
+        {orders.length>0&&<button className="btn btn-primary" onClick={importarTodas} disabled={importing}>{importing?<><div className="spinner"/>&nbsp;Importando...</>:'⬇ Importar todas'}</button>}
+        <button className="btn btn-success" onClick={traerOrdenes} disabled={loading}>{loading?<><div className="spinner"/>&nbsp;Cargando...</>:'↻ Sincronizar'}</button>
+      </div>
+    </div>
+    <div className="table-wrap"><table>
+      <thead><tr><th>ID</th><th>Producto</th><th>Cant.</th><th>Total</th><th>Envío</th><th>Fecha</th></tr></thead>
+      <tbody>
+        {orders.length===0
+          ?<tr><td colSpan={6}><div className="empty">{conectado?'Hacé clic en Sincronizar':'Autorizá primero'}</div></td></tr>
+          :orders.map(o=>{ const item=(o.order_items||[])[0]||{}; return <tr key={o.id}>
+            <td style={{color:'#5b6396',fontSize:11}}>#{o.id}</td>
+            <td style={{fontWeight:600,color:'#fff'}}>{item.item?.title||'-'}</td>
+            <td>{item.quantity||'-'}</td>
+            <td style={{color:'#fbbf24',fontWeight:600}}>{fmt(o.total_amount)}</td>
+            <td style={{color:'#f87171'}}>{o.shipping?.cost>0?fmt(o.shipping.cost):'-'}</td>
+            <td>{o.date_created?new Date(o.date_created).toLocaleDateString('es-AR'):'-'}</td>
+          </tr>;})}
+      </tbody>
+    </table></div>
+  </>;
+}
+
+// ===== APP =====
+const PAGES = [
+  {id:'dashboard',label:'Dashboard',icon:'📊'},
+  {id:'stock',label:'Stock en vivo',icon:'📡'},
+  {id:'productos',label:'Productos',icon:'📦'},
+  {id:'compras',label:'Compras',icon:'🛒'},
+  {id:'ventas',label:'Ventas',icon:'💰'},
+  {id:'gastos',label:'Gastos',icon:'💸'},
+  {id:'precios',label:'Precios',icon:'🏷️'},
+  {id:'ml',label:'Mercado Libre',icon:'🟡'},
+];
+
+function App(){
+  const [page,setPage] = React.useState('dashboard');
+  const pages = {dashboard:<Dashboard/>,stock:<StockVivo/>,productos:<Productos/>,compras:<Compras/>,ventas:<Ventas/>,gastos:<Gastos/>,precios:<Precios/>,ml:<MercadoLibre/>};
+  return <div className="app">
+    <aside className="sidebar">
+      <div className="sidebar-logo"><h1>Mini ERP</h1><span>Gestión de negocio</span></div>
+      <nav className="sidebar-nav">
+        {PAGES.map(p=><div key={p.id} className={`nav-item${page===p.id?' active':''}`} onClick={()=>setPage(p.id)}>
+          <span className="icon">{p.icon}</span><span>{p.label}</span>
+        </div>)}
+      </nav>
+    </aside>
+    <main className="main">{pages[page]}</main>
+  </div>;
+}
+
+ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
+</script>
+</body>
+</html>
