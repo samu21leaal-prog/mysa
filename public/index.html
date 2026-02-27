@@ -731,9 +731,9 @@ function Configuracion(){
 
   const conectarML=()=>{
     // Redirigir al flujo OAuth de ML
-    window.location.href=`${BASE}/api/ml-auth`;
-  };
-
+    const conectarML=()=>{
+  window.location.href=`${BASE}/api/ml-oauth-start`;
+};
   if(loading)return<div className="loading"><div className="spinner"/></div>;
 
   return<>
