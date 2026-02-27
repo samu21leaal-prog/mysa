@@ -96,6 +96,28 @@ const SUPABASE_URL = 'https://vuawtrygybmyhduegtjy.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_ujKDBbpGqHM-sBJU80gpmg_aWRNgwsc';
 const db = createClient(SUPABASE_URL, SUPABASE_KEY);
 
+// Convierte fecha de Excel (número) o string a formato YYYY-MM-DD
+const parseExcelDate = (val) => {
+  if(!val) return today();
+  // Si es número, es fecha serial de Excel
+  if(!isNaN(val) && String(val).length<=5) {
+    const d = new Date(Math.round((Number(val) - 25569) * 86400 * 1000));
+    return d.toISOString().split('T')[0];
+  }
+  // Si es string con formato DD/MM/YYYY
+  const str = String(val).trim();
+  if(str.includes('/')) {
+    const parts = str.split('/');
+    if(parts.length===3) {
+      const [d,m,y] = parts;
+      return `${y.length===2?'20'+y:y}-${m.padStart(2,'0')}-${d.padStart(2,'0')}`;
+  }
+  }
+  // Si ya viene YYYY-MM-DD
+  if(str.match(/^\d{4}-\d{2}-\d{2}/)) return str.slice(0,10);
+  return today();
+};
+
 const fmt = v => new Intl.NumberFormat('es-AR',{style:'currency',currency:'ARS',minimumFractionDigits:0}).format(v||0);
 const fmtDate = d => d ? new Date(d+'T12:00:00').toLocaleDateString('es-AR') : '-';
 const today = () => new Date().toISOString().split('T')[0];
@@ -322,7 +344,7 @@ function Compras(){
         cantidad: Number(norm['cantidad']||1),
         costo_unitario: Number(norm['costo_unitario']||norm['costo']||0),
         proveedor: String(norm['proveedor']||'').trim(),
-        fecha: String(norm['fecha']||today()).trim()||today(),
+        fecha: parseExcelDate(norm['fecha']),
         notas: String(norm['notas']||'').trim(),
       };
       const {error} = await db.from('compras').insert(payload);
@@ -419,7 +441,7 @@ function Ventas(){
         producto_nombre:r['producto']||r['Producto']||'Sin nombre',
         cantidad:Number(r['cantidad']||1),precio_unitario:Number(r['precio_unitario']||0),
         costo_envio:Number(r['costo_envio']||0),costo_producto:Number(r['costo_producto']||0),
-        canal:r['canal']||'mostrador',fecha:r['fecha']||today(),notas:r['notas']||'',
+        canal:r['canal']||'mostrador',fecha:parseExcelDate(r['fecha']),notas:r['notas']||'',
       });ok++;
     }
     setImportMsg(`✅ ${ok} ventas importadas`);load();
@@ -554,7 +576,7 @@ function Gastos(){
         descripcion:r['descripcion']||r['Descripción']||'Sin descripción',
         monto:Number(r['monto']||r['Monto']||0),
         categoria:r['categoria']||r['Categoría']||'',
-        fecha:r['fecha']||r['Fecha']||today(),
+        fecha:parseExcelDate(r['fecha']||r['Fecha']),
         notas:r['notas']||'',
       });ok++;
     }
