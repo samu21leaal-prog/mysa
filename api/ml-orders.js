@@ -42,6 +42,18 @@ async function fetchItemSku(itemId, token) {
   }
 }
 
+async function findProductBySku(sku) {
+  if (!sku) return null;
+
+  const { data, error } = await supabaseAdmin
+    .from('productos')
+    .select('id, nombre, costo')
+    .eq('sku', String(sku).trim())
+    .maybeSingle();
+
+  if (error) return null;
+  return data; // {id, nombre, costo}
+}
 export default async function handler(req, res) {
   const cookies = parseCookies(req.headers.cookie);
   let accessToken = cookies.ml_access_token;
