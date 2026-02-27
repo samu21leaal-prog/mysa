@@ -25,22 +25,38 @@ export default async function handler(req, res) {
 
   try {
     // Intercambiar code por access_token
+    const body = new URLSearchParams({
+      grant_type: "authorization_code",
+      client_id: CLIENT_ID,
+      client_secret: CLIENT_SECRET,
+      code,
+      redirect_uri: REDIRECT_URI,
+    });
+
     const tokenRes = await fetch("https://api.mercadolibre.com/oauth/token", {
       method: "POST",
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: new URLSearchParams({
-        grant_type: "authorization_code",
-        client_id: CLIENT_ID,
-        client_secret: CLIENT_SECRET,
-        code,
-        redirect_uri: REDIRECT_URI,
-      }),
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Accept": "application/json",
+      },
+      body: body.toString(),
     });
 
     const tokenData = await tokenRes.json();
 
     if (!tokenRes.ok) {
-      return res.status(400).json({ error: "Error al obtener token", detail: tokenData });
+      // Debug: mostrar qué valores se usaron (sin exponer el secret completo)
+      return res.status(400).json({
+        error: "Error al obtener token",
+        detail: tokenData,
+        debug: {
+          client_id_usado: CLIENT_ID,
+          client_id_longitud: CLIENT_ID?.length,
+          secret_longitud: CLIENT_SECRET?.length,
+          redirect_uri_usado: REDIRECT_URI,
+          code_recibido: code?.slice(0, 10) + "...",
+        }
+      });
     }
 
     // Redirigir al frontend con el token en la URL (fragment, no queda en logs del server)
@@ -53,3 +69,4 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: "Error interno", detail: err.message });
   }
 }
+
