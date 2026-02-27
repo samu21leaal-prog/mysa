@@ -753,40 +753,38 @@ function MercadoLibre(){
       }
     </div>
 
-    {mlToken&&<>
-      <div className="section-header" style={{marginBottom:16}}>
-        <span style={{color:'#5b6396',fontSize:13}}>{orders.length>0?`${orders.length} órdenes cargadas`:'Sin órdenes cargadas'}</span>
-        <div style={{display:'flex',gap:10}}>
-          {orders.length>0&&<button className="btn btn-primary" onClick={importarTodas} disabled={importing}>
-            {importing?<><div className="spinner"/>&nbsp;Importando...</>:'⬇ Importar todas a Ventas'}
-          </button>}
-          <button className="btn btn-success" onClick={traerOrdenes} disabled={loading}>
-            {loading?<><div className="spinner"/>&nbsp;Cargando...</>:'↻ Sincronizar órdenes'}
-          </button>
-        </div>
+    <div className="section-header" style={{marginBottom:16}}>
+      <span style={{color:'#5b6396',fontSize:13}}>{orders.length>0?`${orders.length} órdenes cargadas`:'Sin órdenes cargadas'}</span>
+      <div style={{display:'flex',gap:10}}>
+        {orders.length>0&&<button className="btn btn-primary" onClick={importarTodas} disabled={importing}>
+          {importing?<><div className="spinner"/>&nbsp;Importando...</>:'⬇ Importar todas a Ventas'}
+        </button>}
+        <button className="btn btn-success" onClick={traerOrdenes} disabled={loading}>
+          {loading?<><div className="spinner"/>&nbsp;Cargando...</>:'↻ Sincronizar órdenes'}
+        </button>
       </div>
-      <div className="table-wrap">
-        <table>
-          <thead><tr><th>ID Orden</th><th>Producto</th><th>Cant.</th><th>Total</th><th>Fecha</th><th></th></tr></thead>
-          <tbody>
-            {orders.length===0
-              ?<tr><td colSpan={6}><div className="empty">Hacé clic en "Sincronizar órdenes" para traer tus ventas de ML</div></td></tr>
-              :orders.map(o=>{
-                const item=(o.order_items||[])[0]||{};
-                return <tr key={o.id}>
-                  <td style={{color:'#5b6396',fontSize:12}}>#{o.id}</td>
-                  <td style={{fontWeight:600,color:'#fff'}}>{item.item?.title||'-'}</td>
-                  <td>{item.quantity||'-'}</td>
-                  <td style={{color:'#fbbf24',fontWeight:600}}>{fmt(o.total_amount)}</td>
-                  <td>{o.date_created?new Date(o.date_created).toLocaleDateString('es-AR'):'-'}</td>
-                  <td><button className="btn btn-success btn-sm" onClick={()=>importarVenta(o)}>Importar</button></td>
-                </tr>;
-              })
-            }
-          </tbody>
-        </table>
-      </div>
-    </>}
+    </div>
+    <div className="table-wrap">
+      <table>
+        <thead><tr><th>ID Orden</th><th>Producto</th><th>Cant.</th><th>Total</th><th>Fecha</th><th></th></tr></thead>
+        <tbody>
+          {orders.length===0
+            ?<tr><td colSpan={6}><div className="empty">{mlToken?'Hacé clic en "Sincronizar órdenes" para traer tus ventas':'Primero autorizá con Mercado Libre arriba'}</div></td></tr>
+            :orders.map(o=>{
+              const item=(o.order_items||[])[0]||{};
+              return <tr key={o.id}>
+                <td style={{color:'#5b6396',fontSize:12}}>#{o.id}</td>
+                <td style={{fontWeight:600,color:'#fff'}}>{item.item?.title||'-'}</td>
+                <td>{item.quantity||'-'}</td>
+                <td style={{color:'#fbbf24',fontWeight:600}}>{fmt(o.total_amount)}</td>
+                <td>{o.date_created?new Date(o.date_created).toLocaleDateString('es-AR'):'-'}</td>
+                <td><button className="btn btn-success btn-sm" onClick={()=>importarVenta(o)}>Importar</button></td>
+              </tr>;
+            })
+          }
+        </tbody>
+      </table>
+    </div>
   </>;
 }
 
