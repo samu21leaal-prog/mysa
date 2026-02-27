@@ -714,7 +714,7 @@ function Configuracion(){
     if(p.get('ml_error')){window.history.replaceState({},'',window.location.pathname);setMsg('❌ Error ML: '+p.get('ml_error')+(p.get('detail')?' — '+p.get('detail'):''));setMsgType('error');}
     const s=await getSettings();
     if(s.flex_tipos)setTipos(s.flex_tipos);
-    verificarToken();
+    if(s.ml_access_token){setToken(s.ml_access_token);setTokenMasked(true);}
     setLoading(false);
   };
   React.useEffect(()=>{load()},[]);
@@ -728,10 +728,13 @@ function Configuracion(){
     setSaving(false);setTokenMasked(!!token);
     setTimeout(()=>setMsg(''),3000);
   };
-const conectarML = () => {
-  window.location.assign('/api/ml-oauth-start');
-};
-     if(loading)return<div className="loading"><div className="spinner"/></div>;
+
+  const conectarML=()=>{
+    // Redirigir al flujo OAuth de ML
+    window.location.href=`${BASE}/api/ml-auth`;
+  };
+
+  if(loading)return<div className="loading"><div className="spinner"/></div>;
 
   return<>
     <div className="page-header"><h2>⚙️ Configuración</h2><p>Todo guardado en Supabase — disponible en todos los dispositivos</p></div>
@@ -795,66 +798,149 @@ const conectarML = () => {
 
 // ===== MERCADO LIBRE =====
 function MercadoLibre(){
-  const [token,setToken]=React.useState('');const [conectado,setConectado]=React.useState(false);
-  const [orders,setOrders]=React.useState([]);const [loading,setLoading]=React.useState(false);
-  const [importing,setImporting]=React.useState(false);const [progress,setProgress]=React.useState(null);
-  const [msg,setMsg]=React.useState('');const [msgType,setMsgType]=React.useState('success');
+  const [token,setToken]=React.useState('');
+  const [conectado,setConectado]=React.useState(false);
+  const [nickname,setNickname]=React.useState('');
+  const [orders,setOrders]=React.useState([]);
+  // estado de sincronización paginada
+  const [syncing,setSyncing]=React.useState(false);
+  const [syncProgress,setSyncProgress]=React.useState(null); // {done,total}
+  // estado de importación
+  const [importing,setImporting]=React.useState(false);
+  const [importProgress,setImportProgress]=React.useState(null); // {done,total}
+  const [msg,setMsg]=React.useState('');
+  const [msgType,setMsgType]=React.useState('success');
   const BASE=window.location.origin;
   const showMsg=(m,t='success')=>{setMsg(m);setMsgType(t);};
 
+  // Cargar token desde Supabase al montar
   React.useEffect(()=>{
-    (async()=>{const s=await getSettings();if(s.ml_access_token){setToken(s.ml_access_token);verificarToken(s.ml_access_token);}})();
+    (async()=>{
+      const s=await getSettings();
+      if(s.ml_access_token){
+        setToken(s.ml_access_token);
+        // Verificar directamente contra ML API (no pasa por la serverless)
+        try{
+          const r=await fetch('https://api.mercadolibre.com/users/me',{headers:{Authorization:`Bearer ${s.ml_access_token}`}});
+          const d=await r.json();
+          if(d.id){setConectado(true);setNickname(d.nickname||String(d.id));}
+          else setConectado(false);
+        }catch{setConectado(false);}
+      }
+    })();
   },[]);
 
-  const verificarToken = async () => {
-  try {
-    const r = await fetch('/api/ml-oauth-status', { credentials: 'include' });
-    const d = await r.json();
+  // ── Sincronizar: trae todas las órdenes paginando de a 50, una request a la vez ──
+  const sincronizar=async()=>{
+    if(!token){showMsg('Sin token — conectate en ⚙️ Configuración','error');return;}
+    setSyncing(true);setMsg('');setOrders([]);setSyncProgress({done:0,total:'?'});
 
-    if (d.ok) {
-      setConectado(true);
-      showMsg(`✓ Conectado como ${d.user_id}`);
-    } else {
-      setConectado(false);
-      showMsg('No conectado — usá el botón OAuth en ⚙️ Configuración','error');
+    try{
+      let allOrders=[];
+      let offset=0;
+      let total=null;
+
+      while(true){
+        const r=await fetch(`${BASE}/api/ml-orders?token=${encodeURIComponent(token)}&offset=${offset}`);
+
+        // Verificar que la respuesta sea JSON válido
+        const text=await r.text();
+        let d;
+        try{ d=JSON.parse(text); }
+        catch(e){ showMsg(`Error al parsear respuesta del servidor (offset ${offset}). Intentá de nuevo.`,'error'); break; }
+
+        if(d.error){ showMsg('Error ML: '+d.error+(d.detail?' — '+d.detail:''),'error'); setConectado(false); break; }
+
+        allOrders=allOrders.concat(d.orders||[]);
+        if(total===null) total=d.total||0;
+
+        setSyncProgress({done:allOrders.length,total});
+
+        // Fin de páginas
+        if((d.orders||[]).length<50 || allOrders.length>=total) break;
+        offset+=50;
+      }
+
+      setOrders(allOrders);
+      if(allOrders.length>0) showMsg(`✅ ${allOrders.length} órdenes sincronizadas (de ${total} en ML)`);
+    }catch(e){
+      showMsg('Error de red: '+e.message,'error');
     }
-  } catch {
-    setConectado(false);
-    showMsg('Error verificando conexión','error');
-  }
-};
 
-  const traerOrdenes=async()=>{
-    setLoading(true);setMsg('');
-    try{const r=await fetch(`${BASE}/api/ml-orders?list=1&token=${encodeURIComponent(token)}`);const d=await r.json();
-      if(d.error){setConectado(false);showMsg('Error: '+d.error+(d.detail?' — '+d.detail:''),'error');setOrders([]);}
-      else{setOrders(d.orders||[]);showMsg(`${d.orders?.length||0} órdenes (${d.total} total)`);}
-    }catch(e){showMsg('Error de conexión: '+e.message,'error');}
-    setLoading(false);
+    setSyncing(false);setSyncProgress(null);
   };
 
+  // ── Importar a Supabase: todo del lado del cliente, sin pasar por serverless ──
   const importarTodas=async()=>{
     if(!orders.length){showMsg('Sincronizá primero','warn');return;}
-    setImporting(true);setMsg('');setProgress({done:0,total:orders.length});
+    setImporting(true);setMsg('');setImportProgress({done:0,total:orders.length});
+
+    // Traer productos para cruzar SKU (una sola query)
     const {data:prods}=await db.from('productos').select('id,sku,costo,stock,nombre');
+
+    // Traer ml_order_ids ya existentes en ventas (una sola query)
+    const {data:existentes}=await db.from('ventas').select('ml_order_id').not('ml_order_id','is',null);
+    const existentesSet=new Set((existentes||[]).map(x=>String(x.ml_order_id)));
+
     let imp=0,dup=0,stockAct=0;
+    const inserts=[];
+
     for(const order of orders){
-      const {data:ex}=await db.from('ventas').select('id').eq('ml_order_id',String(order.id)).limit(1);
-      if(ex&&ex.length>0){dup++;setProgress({done:imp+dup,total:orders.length});continue;}
+      if(existentesSet.has(String(order.id))){dup++;setImportProgress({done:imp+dup,total:orders.length});continue;}
+
       for(const item of order.order_items||[]){
-        let sellerSku=item.item?.seller_sku||null;
-        if(!sellerSku&&item.item?.id){try{const ir=await fetch(`https://api.mercadolibre.com/items/${item.item.id}`,{headers:{Authorization:`Bearer ${token}`}});const id=await ir.json();sellerSku=id.seller_sku||(id.attributes||[]).find(a=>a.id==='SELLER_SKU'||a.id==='SKU')?.value_name||null;}catch(_){}}
+        // SKU: viene en seller_sku del item dentro de la orden (sin fetch extra)
+        const sellerSku=item.item?.seller_sku||null;
         const prod=sellerSku?(prods||[]).find(p=>p.sku&&p.sku.trim().toLowerCase()===sellerSku.trim().toLowerCase()):null;
-        await db.from('ventas').insert({canal:'mercadolibre',ml_order_id:String(order.id),ml_item_id:String(item.item?.id||''),seller_sku:sellerSku||null,producto_id:prod?.id||null,producto_nombre:item.item?.title||'ML',cantidad:item.quantity||1,precio_unitario:item.unit_price||0,total:(item.quantity||1)*(item.unit_price||0),costo_envio:Number(order.shipping?.cost||0),envio_flex:Number(order.shipping?.cost||0),comision_ml:Number(order.payments?.[0]?.marketplace_fee||0),otras_comisiones:0,costo_producto:prod?prod.costo*(item.quantity||1):0,fecha:order.date_created?.split('T')[0]||today()});
-        if(prod){const ns=Math.max(0,prod.stock-(item.quantity||1));await db.from('productos').update({stock:ns}).eq('id',prod.id);prod.stock=ns;stockAct++;}
+
+        inserts.push({
+          canal:'mercadolibre',
+          ml_order_id:String(order.id),
+          ml_item_id:String(item.item?.id||''),
+          seller_sku:sellerSku||null,
+          producto_id:prod?.id||null,
+          producto_nombre:item.item?.title||'ML',
+          cantidad:item.quantity||1,
+          precio_unitario:item.unit_price||0,
+          total:(item.quantity||1)*(item.unit_price||0),
+          costo_envio:Number(order.shipping?.cost||0),
+          envio_flex:Number(order.shipping?.cost||0),
+          comision_ml:Number(order.payments?.[0]?.marketplace_fee||0),
+          otras_comisiones:0,
+          costo_producto:prod?prod.costo*(item.quantity||1):0,
+          fecha:order.date_created?.split('T')[0]||today(),
+        });
       }
-      imp++;setProgress({done:imp+dup,total:orders.length});
+      imp++;
+      setImportProgress({done:imp+dup,total:orders.length});
     }
-    setImporting(false);setProgress(null);
-    showMsg(`✅ ${imp} importadas, ${stockAct} stocks actualizados${dup>0?` (${dup} ya existían)`:''}`);
+
+    // Insertar en lotes de 50 para no saturar
+    const BATCH=50;
+    for(let i=0;i<inserts.length;i+=BATCH){
+      const batch=inserts.slice(i,i+BATCH);
+      await db.from('ventas').upsert(batch,{onConflict:'ml_order_id,ml_item_id',ignoreDuplicates:true});
+    }
+
+    // Actualizar stock para los que mapearon producto
+    const stockUpdates={};
+    for(const ins of inserts){
+      if(ins.producto_id){
+        if(!stockUpdates[ins.producto_id]) stockUpdates[ins.producto_id]={prod:prods.find(p=>p.id===ins.producto_id),resta:0};
+        stockUpdates[ins.producto_id].resta+=ins.cantidad;
+        stockAct++;
+      }
+    }
+    for(const [pid,{prod,resta}] of Object.entries(stockUpdates)){
+      if(prod) await db.from('productos').update({stock:Math.max(0,prod.stock-resta)}).eq('id',pid);
+    }
+
+    setImporting(false);setImportProgress(null);
+    showMsg(`✅ ${imp} órdenes importadas, ${stockAct} items con stock actualizado${dup>0?` (${dup} ya existían)`:''}`);
   };
 
-  const pct=progress?Math.round((progress.done/progress.total)*100):0;
+  const syncPct=syncProgress&&syncProgress.total!=='?'?Math.round((syncProgress.done/syncProgress.total)*100):null;
+  const impPct=importProgress?Math.round((importProgress.done/importProgress.total)*100):0;
 
   return<>
     <div className="page-header"><h2>🟡 Mercado Libre</h2><p>Conectate desde ⚙️ Configuración</p></div>
@@ -863,36 +949,53 @@ function MercadoLibre(){
     <div className="card" style={{marginBottom:16,maxWidth:480}}>
       <div className="card-label" style={{marginBottom:10}}>Estado</div>
       {conectado
-        ?<div style={{padding:'10px 14px',background:'#064e3b',border:'1px solid #065f46',borderRadius:8,color:'#6ee7b7',fontWeight:600}}>✓ Token activo y verificado</div>
+        ?<div style={{padding:'10px 14px',background:'#064e3b',border:'1px solid #065f46',borderRadius:8,color:'#6ee7b7',fontWeight:600}}>
+            ✓ Conectado como <strong>{nickname}</strong>
+          </div>
         :<div style={{padding:'10px 14px',background:'#7f1d1d22',border:'1px solid #7f1d1d',borderRadius:8,color:'#fca5a5',fontSize:13}}>
             ⚠️ Sin conexión — Usá el botón OAuth en <strong>⚙️ Configuración</strong>
           </div>
       }
-      {conectado&&<button className="btn btn-secondary btn-sm" style={{marginTop:8}} onClick={()=>{setConectado(false);setOrders([]);}}>Reconectar</button>}
     </div>
 
     <div className="section-header">
-      <span style={{color:'#5b6396',fontSize:13}}>{orders.length>0?`${orders.length} órdenes`:'Sin órdenes cargadas'}</span>
+      <span style={{color:'#5b6396',fontSize:13}}>
+        {syncing&&syncProgress?`Sincronizando... ${syncProgress.done}${syncProgress.total!=='?'?' / '+syncProgress.total:''} órdenes`:
+         orders.length>0?`${orders.length} órdenes cargadas`:'Sin órdenes'}
+      </span>
       <div style={{display:'flex',gap:8,flexWrap:'wrap'}}>
-        {orders.length>0&&<button className="btn btn-primary btn-sm" onClick={importarTodas} disabled={importing||!conectado}>
-          {importing?<><div className="spinner"/>&nbsp;{progress?`${pct}%`:'...'}</>:'⬇ Importar todo'}
-        </button>}
-        <button className="btn btn-success btn-sm" onClick={traerOrdenes} disabled={loading||!conectado}>
-          {loading?<><div className="spinner"/>&nbsp;Cargando...</>:'↻ Sincronizar'}
+        {orders.length>0&&!syncing&&(
+          <button className="btn btn-primary btn-sm" onClick={importarTodas} disabled={importing}>
+            {importing?<><div className="spinner"/>&nbsp;{impPct}%</>:'⬇ Importar a Supabase'}
+          </button>
+        )}
+        <button className="btn btn-success btn-sm" onClick={sincronizar} disabled={syncing||importing}>
+          {syncing?<><div className="spinner"/>&nbsp;Sincronizando...</>:'↻ Sincronizar órdenes'}
         </button>
       </div>
     </div>
 
-    {importing&&progress&&<div style={{marginBottom:14}}>
-      <div className="progress-bar"><div className="progress-fill" style={{width:pct+'%'}}/></div>
-      <div style={{fontSize:11,color:'#5b6396',marginTop:4,textAlign:'right'}}>{progress.done}/{progress.total}</div>
-    </div>}
+    {/* Barra progreso sync */}
+    {syncing&&syncProgress&&syncPct!==null&&(
+      <div style={{marginBottom:14}}>
+        <div className="progress-bar"><div className="progress-fill" style={{width:syncPct+'%'}}/></div>
+        <div style={{fontSize:11,color:'#5b6396',marginTop:4,textAlign:'right'}}>{syncProgress.done} / {syncProgress.total} órdenes</div>
+      </div>
+    )}
+
+    {/* Barra progreso import */}
+    {importing&&importProgress&&(
+      <div style={{marginBottom:14}}>
+        <div className="progress-bar"><div className="progress-fill" style={{width:impPct+'%',background:'#34d399'}}/></div>
+        <div style={{fontSize:11,color:'#5b6396',marginTop:4,textAlign:'right'}}>Importando {importProgress.done} / {importProgress.total}</div>
+      </div>
+    )}
 
     <div className="table-wrap"><table>
       <thead><tr><th>#</th><th>Producto</th><th>SKU</th><th>Total</th><th>Fecha</th></tr></thead>
       <tbody>
         {orders.length===0
-          ?<tr><td colSpan={5}><div className="empty">{conectado?'Sincronizá para ver órdenes':'Conectate en ⚙️ Configuración'}</div></td></tr>
+          ?<tr><td colSpan={5}><div className="empty">{conectado?'Hacé clic en "Sincronizar órdenes"':'Conectate en ⚙️ Configuración'}</div></td></tr>
           :orders.map(o=>{const item=(o.order_items||[])[0]||{};return<tr key={o.id}>
             <td style={{color:'#5b6396',fontSize:11}}>#{String(o.id).slice(-6)}</td>
             <td style={{fontWeight:600,color:'#fff',maxWidth:140,overflow:'hidden',textOverflow:'ellipsis'}}>{item.item?.title||'-'}</td>
