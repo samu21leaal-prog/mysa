@@ -728,13 +728,10 @@ function Configuracion(){
     setSaving(false);setTokenMasked(!!token);
     setTimeout(()=>setMsg(''),3000);
   };
-
-  const conectarML=()=>{
-    // Redirigir al flujo OAuth de ML
-    const conectarML=()=>{
-  window.location.href=`${BASE}/api/ml-oauth-start`;
+const conectarML = () => {
+  window.location.assign('/api/ml-oauth-start');
 };
-  if(loading)return<div className="loading"><div className="spinner"/></div>;
+     if(loading)return<div className="loading"><div className="spinner"/></div>;
 
   return<>
     <div className="page-header"><h2>⚙️ Configuración</h2><p>Todo guardado en Supabase — disponible en todos los dispositivos</p></div>
