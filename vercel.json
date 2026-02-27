@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "functions": {
+    "api/*.js": { "maxDuration": 30 }
+  },
+  "routes": [
+    { "src": "/api/ml-auth",     "dest": "/api/ml-auth.js" },
+    { "src": "/api/ml-callback", "dest": "/api/ml-callback.js" },
+    { "src": "/api/ping",        "dest": "/api/ping.js" },
+    { "src": "/(.*)",            "dest": "/public/index.html" }
+  ]
+}
