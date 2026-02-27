@@ -643,8 +643,8 @@ function Precios(){
 
 // ============ ML INTEGRACIÓN ============
 function MercadoLibre(){
-  const [mlToken,setMlToken] = React.useState(()=>localStorage.getItem('ml_token')||'');
   const [clientId,setClientId] = React.useState(()=>localStorage.getItem('ml_client_id')||'');
+  const [conectado,setConectado] = React.useState(false);
   const [orders,setOrders] = React.useState([]);
   const [loading,setLoading] = React.useState(false);
   const [importing,setImporting] = React.useState(false);
@@ -655,11 +655,18 @@ function MercadoLibre(){
   React.useEffect(()=>{
     const p = new URLSearchParams(window.location.search);
     if(p.get('ml_connected')==='1'){
-      const t = p.get('token')||localStorage.getItem('ml_token')||'';
-      if(t){setMlToken(t);localStorage.setItem('ml_token',t);}
       window.history.replaceState({},'',window.location.pathname);
-      showMsg('¡Conectado con Mercado Libre! Ahora podés traer tus órdenes.','success');
+      setConectado(true);
+      showMsg('¡Conectado con Mercado Libre! El token se renueva automáticamente.','success');
     }
+    if(p.get('ml_error')){
+      showMsg('Error al conectar: '+p.get('ml_error'),'error');
+      window.history.replaceState({},'',window.location.pathname);
+    }
+    // Verificar si hay sesión activa llamando a ml-orders sin parámetros
+    fetch(`${BASE}/api/ml-orders`).then(r=>{
+      if(r.ok) setConectado(true);
+    }).catch(()=>{});
   },[]);
 
   const showMsg = (m,type='success')=>{setMsg(m);setMsgType(type);};
@@ -671,47 +678,26 @@ function MercadoLibre(){
     window.location.href = `https://auth.mercadolibre.com.ar/authorization?response_type=code&client_id=${clientId}&redirect_uri=${redirectUri}`;
   };
 
-  const desconectar = ()=>{
-    localStorage.removeItem('ml_token');
-    setMlToken('');
-    setOrders([]);
-    showMsg('Desconectado de Mercado Libre','warn');
-  };
-
   const traerOrdenes = async()=>{
     setLoading(true);setMsg('');
     try{
-      const r = await fetch(`${BASE}/api/ml-orders?token=${mlToken}`);
+      const r = await fetch(`${BASE}/api/ml-orders`);
       const d = await r.json();
-      if(d.error){showMsg('Error: '+d.message,'error');setOrders([]);}
-      else{
+      if(d.error){
+        setConectado(false);
+        showMsg(r.status===401?'Sesión vencida. Volvé a autorizar con ML.':'Error: '+d.message,'error');
+        setOrders([]);
+      } else {
+        setConectado(true);
         setOrders(d.orders||[]);
         showMsg(`${d.orders?.length||0} órdenes encontradas`,'success');
       }
-    }catch(e){showMsg('Error de conexión con el servidor','error');}
+    }catch(e){showMsg('Error de conexión','error');}
     setLoading(false);
   };
 
-  const importarVenta = async(order)=>{
-    const items = order.order_items||[];
-    for(const item of items){
-      // Verificar si ya existe para no duplicar
-      const {data:existe} = await db.from('ventas').select('id').eq('ml_order_id',String(order.id)).limit(1);
-      if(existe&&existe.length>0) continue;
-      await db.from('ventas').insert({
-        producto_nombre: item.item?.title||'ML - Sin título',
-        cantidad: item.quantity||1,
-        precio_unitario: item.unit_price||0,
-        canal: 'mercadolibre',
-        ml_order_id: String(order.id),
-        fecha: order.date_created?.split('T')[0]||today(),
-      });
-    }
-    showMsg('✓ Venta importada','success');
-  };
-
   const importarTodas = async()=>{
-    if(orders.length===0){showMsg('Primero traé las órdenes','warn');return;}
+    if(orders.length===0){showMsg('Primero sincronizá las órdenes','warn');return;}
     setImporting(true);setMsg('');
     let importadas=0, duplicadas=0;
     for(const order of orders){
@@ -731,33 +717,35 @@ function MercadoLibre(){
       importadas++;
     }
     setImporting(false);
-    showMsg(`✅ ${importadas} órdenes importadas${duplicadas>0?` (${duplicadas} ya existían, no se duplicaron)`:''}`, 'success');
+    showMsg(`✅ ${importadas} órdenes importadas${duplicadas>0?` (${duplicadas} ya existían)`:''}`, 'success');
   };
 
   return <>
-    <div className="page-header"><h2>🟡 Mercado Libre</h2><p>Sincronización de órdenes vía API</p></div>
+    <div className="page-header"><h2>🟡 Mercado Libre</h2><p>Sincronización de órdenes vía API — token automático</p></div>
     {msg&&<div className={`alert alert-${msgType}`}>{msg}</div>}
 
     <div className="card" style={{marginBottom:20,maxWidth:520}}>
-      <div className="card-label" style={{marginBottom:12}}>Conexión OAuth</div>
-      <div className="form-group">
-        <label>Client ID de tu app ML</label>
-        <input className="form-control" value={clientId} onChange={e=>setClientId(e.target.value)} placeholder="Ej: 7692918477883565" disabled={!!mlToken}/>
-      </div>
-      {!mlToken
-        ? <button className="btn btn-primary" onClick={conectar} style={{width:'100%'}}>🟡 Autorizar con Mercado Libre</button>
-        : <div style={{display:'flex',gap:10}}>
-            <div style={{flex:1,padding:'10px 14px',background:'#064e3b',border:'1px solid #065f46',borderRadius:8,color:'#6ee7b7',fontSize:13,fontWeight:600}}>✓ Conectado a Mercado Libre</div>
-            <button className="btn btn-secondary" onClick={desconectar}>Desconectar</button>
+      <div className="card-label" style={{marginBottom:12}}>Conexión</div>
+      {conectado
+        ? <div style={{padding:'12px 16px',background:'#064e3b',border:'1px solid #065f46',borderRadius:8,color:'#6ee7b7',fontSize:13,fontWeight:600,marginBottom:10}}>
+            ✓ Sesión activa — el token se renueva solo
           </div>
+        : <>
+            <div className="form-group">
+              <label>Client ID</label>
+              <input className="form-control" value={clientId} onChange={e=>setClientId(e.target.value)} placeholder="Ej: 7692918477883565"/>
+            </div>
+            <button className="btn btn-primary" onClick={conectar} style={{width:'100%'}}>🟡 Autorizar con Mercado Libre</button>
+          </>
       }
+      {conectado&&<button className="btn btn-secondary btn-sm" onClick={()=>{setConectado(false);setOrders([]);}}>Reconectar con otra cuenta</button>}
     </div>
 
     <div className="section-header" style={{marginBottom:16}}>
-      <span style={{color:'#5b6396',fontSize:13}}>{orders.length>0?`${orders.length} órdenes cargadas`:'Sin órdenes cargadas'}</span>
+      <span style={{color:'#5b6396',fontSize:13}}>{orders.length>0?`${orders.length} órdenes`:'Sin órdenes'}</span>
       <div style={{display:'flex',gap:10}}>
         {orders.length>0&&<button className="btn btn-primary" onClick={importarTodas} disabled={importing}>
-          {importing?<><div className="spinner"/>&nbsp;Importando...</>:'⬇ Importar todas a Ventas'}
+          {importing?<><div className="spinner"/>&nbsp;Importando...</>:'⬇ Importar todas'}
         </button>}
         <button className="btn btn-success" onClick={traerOrdenes} disabled={loading}>
           {loading?<><div className="spinner"/>&nbsp;Cargando...</>:'↻ Sincronizar órdenes'}
@@ -766,10 +754,10 @@ function MercadoLibre(){
     </div>
     <div className="table-wrap">
       <table>
-        <thead><tr><th>ID Orden</th><th>Producto</th><th>Cant.</th><th>Total</th><th>Fecha</th><th></th></tr></thead>
+        <thead><tr><th>ID Orden</th><th>Producto</th><th>Cant.</th><th>Total</th><th>Fecha</th></tr></thead>
         <tbody>
           {orders.length===0
-            ?<tr><td colSpan={6}><div className="empty">{mlToken?'Hacé clic en "Sincronizar órdenes" para traer tus ventas':'Primero autorizá con Mercado Libre arriba'}</div></td></tr>
+            ?<tr><td colSpan={5}><div className="empty">{conectado?'Hacé clic en "Sincronizar órdenes"':'Autorizá con ML primero'}</div></td></tr>
             :orders.map(o=>{
               const item=(o.order_items||[])[0]||{};
               return <tr key={o.id}>
@@ -778,7 +766,6 @@ function MercadoLibre(){
                 <td>{item.quantity||'-'}</td>
                 <td style={{color:'#fbbf24',fontWeight:600}}>{fmt(o.total_amount)}</td>
                 <td>{o.date_created?new Date(o.date_created).toLocaleDateString('es-AR'):'-'}</td>
-                <td><button className="btn btn-success btn-sm" onClick={()=>importarVenta(o)}>Importar</button></td>
               </tr>;
             })
           }
@@ -823,3 +810,4 @@ ReactDOM.createRoot(document.getElementById('root')).render(<App/>);
 </script>
 </body>
 </html>
+
