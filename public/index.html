@@ -1,0 +1,846 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Mini ERP</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0a0c10; --surface: #111318; --surface2: #1a1d24; --border: #252830;
+      --accent: #00e5a0; --accent2: #ff6b35; --accent3: #7c6bff;
+      --text: #e8eaf0; --muted: #6b7280; --danger: #ff4d6d;
+      --warning: #fbbf24; --success: #10b981; --ml-yellow: #ffe600;
+    }
+    body { background: var(--bg); color: var(--text); font-family: 'Syne', sans-serif; min-height: 100vh; }
+    .app { display: flex; min-height: 100vh; }
+    .sidebar { width: 220px; min-height: 100vh; background: var(--surface); border-right: 1px solid var(--border); display: flex; flex-direction: column; position: fixed; left: 0; top: 0; bottom: 0; z-index: 100; }
+    .sidebar-logo { padding: 24px 20px 20px; font-size: 18px; font-weight: 800; letter-spacing: -0.5px; color: var(--accent); border-bottom: 1px solid var(--border); }
+    .sidebar-logo span { color: var(--text); }
+    .sidebar-nav { flex: 1; padding: 12px 0; overflow-y: auto; }
+    .nav-item { display: flex; align-items: center; gap: 10px; padding: 10px 20px; cursor: pointer; font-size: 13px; font-weight: 600; color: var(--muted); transition: all 0.15s; border-left: 3px solid transparent; user-select: none; }
+    .nav-item:hover { color: var(--text); background: var(--surface2); }
+    .nav-item.active { color: var(--accent); border-left-color: var(--accent); background: rgba(0,229,160,0.06); }
+    .sidebar-footer { padding: 16px 20px; border-top: 1px solid var(--border); font-size: 11px; color: var(--muted); }
+    .main { margin-left: 220px; flex: 1; display: flex; flex-direction: column; }
+    .topbar { padding: 16px 32px; border-bottom: 1px solid var(--border); background: var(--surface); display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 50; }
+    .topbar h1 { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
+    .content { padding: 28px 32px; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+    .card-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+    .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; position: relative; overflow: hidden; }
+    .stat-card::after { content: ''; position: absolute; top: -20px; right: -20px; width: 80px; height: 80px; border-radius: 50%; background: var(--c, var(--accent)); opacity: 0.07; }
+    .stat-label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 8px; }
+    .stat-value { font-size: 26px; font-weight: 800; font-family: 'DM Mono', monospace; letter-spacing: -1px; }
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th { text-align: left; padding: 10px 14px; color: var(--muted); font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; border-bottom: 1px solid var(--border); }
+    td { padding: 11px 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: var(--surface2); }
+    .btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: all 0.15s; font-family: 'Syne', sans-serif; }
+    .btn-primary { background: var(--accent); color: #000; }
+    .btn-primary:hover { background: #00c98a; }
+    .btn-primary:disabled { opacity: 0.5; cursor: not-allowed; }
+    .btn-ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+    .btn-ghost:hover { color: var(--text); border-color: var(--text); }
+    .btn-ghost:disabled { opacity: 0.4; cursor: not-allowed; }
+    .btn-danger { background: var(--danger); color: #fff; }
+    .btn-danger:hover { background: #e03558; }
+    .btn-sm { padding: 5px 10px; font-size: 12px; }
+    .btn-icon { padding: 6px; background: var(--surface2); border: 1px solid var(--border); border-radius: 6px; cursor: pointer; color: var(--muted); transition: all 0.15s; font-family: inherit; }
+    .btn-icon:hover { color: var(--text); }
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
+    .field { display: flex; flex-direction: column; gap: 6px; }
+    .field label { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.8px; }
+    .field input, .field select, .field textarea { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 9px 12px; color: var(--text); font-family: 'DM Mono', monospace; font-size: 13px; outline: none; transition: border-color 0.15s; }
+    .field input:focus, .field select:focus { border-color: var(--accent); }
+    .field select option { background: var(--surface2); }
+    .badge { display: inline-block; padding: 3px 8px; border-radius: 20px; font-size: 11px; font-weight: 700; }
+    .badge-green { background: rgba(16,185,129,0.15); color: var(--success); }
+    .badge-red { background: rgba(255,77,109,0.15); color: var(--danger); }
+    .badge-yellow { background: rgba(251,191,36,0.15); color: var(--warning); }
+    .badge-purple { background: rgba(124,107,255,0.15); color: var(--accent3); }
+    .badge-ml { background: rgba(255,230,0,0.15); color: var(--ml-yellow); }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.75); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 20px; backdrop-filter: blur(4px); }
+    .modal { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; width: 100%; max-width: 560px; max-height: 90vh; overflow-y: auto; }
+    .modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+    .modal-header h2 { font-size: 18px; font-weight: 800; }
+    .section-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+    .section-title { font-size: 15px; font-weight: 700; }
+    .gap { display: flex; gap: 8px; flex-wrap: wrap; }
+    .chip { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; background: var(--surface2); border: 1px solid var(--border); color: var(--muted); cursor: pointer; transition: all 0.15s; user-select: none; }
+    .chip.active { background: rgba(0,229,160,0.1); border-color: var(--accent); color: var(--accent); }
+    .divider { height: 1px; background: var(--border); margin: 20px 0; }
+    .empty { text-align: center; padding: 40px; color: var(--muted); font-size: 13px; }
+    .stock-low { color: var(--danger); font-weight: 700; }
+    .stock-ok { color: var(--success); }
+    .ml-badge { background: var(--ml-yellow); color: #000; padding: 3px 8px; border-radius: 4px; font-size: 11px; font-weight: 800; }
+    .progress { height: 4px; background: var(--border); border-radius: 2px; margin-top: 8px; }
+    .progress-bar { height: 100%; border-radius: 2px; background: var(--accent); transition: width 0.3s; }
+    .tag { display: inline-block; padding: 2px 7px; border-radius: 4px; font-size: 11px; font-weight: 600; background: var(--surface2); color: var(--muted); }
+    .ml-connect-banner { background: linear-gradient(135deg, rgba(255,230,0,0.08), rgba(255,107,53,0.08)); border: 1px solid rgba(255,230,0,0.2); border-radius: 12px; padding: 18px 24px; display: flex; align-items: center; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
+    .alert { padding: 12px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 16px; line-height: 1.5; }
+    .alert-warning { background: rgba(251,191,36,0.1); border: 1px solid rgba(251,191,36,0.2); color: var(--warning); }
+    .alert-info { background: rgba(0,229,160,0.08); border: 1px solid rgba(0,229,160,0.2); color: var(--accent); }
+    .alert-danger { background: rgba(255,77,109,0.1); border: 1px solid rgba(255,77,109,0.2); color: var(--danger); }
+    .spinner { display: inline-block; width: 14px; height: 14px; border: 2px solid rgba(0,229,160,0.3); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.7s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    code { font-family: 'DM Mono', monospace; font-size: 0.9em; }
+    .steps { counter-reset: step; display: flex; flex-direction: column; gap: 16px; }
+    .step { display: flex; gap: 14px; align-items: flex-start; }
+    .step-num { counter-increment: step; background: var(--accent); color: #000; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; flex-shrink: 0; margin-top: 1px; }
+    .step-body { font-size: 13px; line-height: 1.6; color: var(--text); }
+    .step-body strong { color: var(--accent); }
+    .copy-btn { font-size: 11px; padding: 2px 8px; background: var(--surface2); border: 1px solid var(--border); border-radius: 4px; color: var(--muted); cursor: pointer; font-family: inherit; margin-left: 8px; }
+    .copy-btn:hover { color: var(--text); }
+    pre { background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; padding: 12px; font-family: 'DM Mono', monospace; font-size: 12px; overflow-x: auto; margin-top: 8px; color: var(--accent); line-height: 1.6; }
+  </style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useCallback, useEffect } = React;
+
+// ─── STORAGE ──────────────────────────────────────────────────────────
+const useStore = (key, initial) => {
+  const [data, setData] = useState(() => {
+    try { const s = localStorage.getItem(key); return s ? JSON.parse(s) : initial; } catch { return initial; }
+  });
+  const save = useCallback((val) => {
+    setData(prev => {
+      const next = typeof val === "function" ? val(prev) : val;
+      try { localStorage.setItem(key, JSON.stringify(next)); } catch {}
+      return next;
+    });
+  }, [key]);
+  return [data, save];
+};
+
+const uid = () => Math.random().toString(36).slice(2, 9);
+const fmt = (n) => new Intl.NumberFormat("es-AR", { style: "currency", currency: "ARS" }).format(n || 0);
+const fmtDate = (d) => { try { return new Date(d + "T12:00:00").toLocaleDateString("es-AR"); } catch { return d; } };
+
+// ─── ICONS ────────────────────────────────────────────────────────────
+const PATHS = {
+  dashboard: "M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z",
+  purchases: "M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-5-5 1.41-1.41L12 14.17l7.59-7.59L21 8l-9 9z",
+  sales: "M7 18c-1.1 0-1.99.9-1.99 2S5.9 22 7 22s2-.9 2-2-.9-2-2-2zM1 2v2h2l3.6 7.59-1.35 2.45c-.16.28-.25.61-.25.96C5 16.1 5.9 17 7 17h12v-2H7.42c-.14 0-.25-.11-.25-.25l.03-.12.9-1.63H19c.75 0 1.41-.41 1.75-1.03l3.58-6.49c.17-.32.26-.67.26-1.03H5.21l-.94-2H1zm16 16c-1.1 0-1.99.9-1.99 2s.89 2 1.99 2 2-.9 2-2-.9-2-2-2z",
+  stock: "M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4",
+  expenses: "M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z",
+  prices: "M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z",
+  ml: "M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5",
+  plus: "M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z",
+  close: "M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z",
+  edit: "M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z",
+  trash: "M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z",
+  connect: "M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z",
+  sync: "M12 4V1L8 5l4 4V6c3.31 0 6 2.69 6 6 0 1.01-.25 1.97-.7 2.8l1.46 1.46C19.54 15.03 20 13.57 20 12c0-4.42-3.58-8-8-8zm0 14c-3.31 0-6-2.69-6-6 0-1.01.25-1.97.7-2.8L5.24 7.74C4.46 8.97 4 10.43 4 12c0 4.42 3.58 8 8 8v3l4-4-4-4v3z",
+  warning: "M1 21h22L12 2 1 21zm12-3h-2v-2h2v2zm0-4h-2v-4h2v4z",
+  check: "M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z",
+  external: "M19 19H5V5h7V3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z",
+};
+
+function Icon({ name, size = 18 }) {
+  const d = PATHS[name] || PATHS.dashboard;
+  const isStroke = name === "stock" || name === "ml";
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24"
+      fill={isStroke ? "none" : "currentColor"}
+      stroke={isStroke ? "currentColor" : "none"}
+      strokeWidth={isStroke ? "2" : "0"}
+      strokeLinecap="round" strokeLinejoin="round"
+      style={{ flexShrink: 0 }}>
+      <path d={d} />
+    </svg>
+  );
+}
+
+// ─── CHANNELS / BADGES ────────────────────────────────────────────────
+const CHANNELS = ["Mercado Libre", "Tienda Nube", "Instagram", "WhatsApp", "Mostrador", "Otro"];
+function ChannelBadge({ channel }) {
+  const colors = { "Mercado Libre": "badge-ml", "Tienda Nube": "badge-purple", "Instagram": "badge-yellow", "WhatsApp": "badge-green", "Mostrador": "badge-red" };
+  return <span className={`badge ${colors[channel] || "badge-yellow"}`}>{channel}</span>;
+}
+
+function MLStatusBadge({ status }) {
+  const map = { paid: ["badge-green", "Pagado"], pending: ["badge-yellow", "Pendiente"], cancelled: ["badge-red", "Cancelado"], delivered: ["badge-green", "Entregado"] };
+  const [cls, label] = map[status] || ["badge-yellow", status];
+  return <span className={`badge ${cls}`}>{label}</span>;
+}
+
+// ─── MODAL ────────────────────────────────────────────────────────────
+function Modal({ title, children, onClose, onSave, saveLabel = "Guardar" }) {
+  return (
+    <div className="modal-overlay" onClick={e => e.target === e.currentTarget && onClose()}>
+      <div className="modal">
+        <div className="modal-header">
+          <h2>{title}</h2>
+          <button className="btn-icon" onClick={onClose}><Icon name="close" size={16} /></button>
+        </div>
+        {children}
+        <div className="gap" style={{ marginTop: 24 }}>
+          <button className="btn btn-primary" onClick={onSave}>{saveLabel}</button>
+          <button className="btn btn-ghost" onClick={onClose}>Cancelar</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── DASHBOARD ────────────────────────────────────────────────────────
+function Dashboard({ products, purchases, sales, expenses }) {
+  const totalRevenue = sales.reduce((a, s) => a + (s.total || 0), 0);
+  const totalCost = purchases.reduce((a, p) => a + (p.total || 0), 0);
+  const totalExpenses = expenses.reduce((a, e) => a + (e.amount || 0), 0);
+  const profit = totalRevenue - totalCost - totalExpenses;
+  const lowStock = products.filter(p => (p.stock || 0) <= (p.minStock || 5));
+  const recentSales = [...sales].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
+  const recentPurchases = [...purchases].sort((a, b) => new Date(b.date) - new Date(a.date)).slice(0, 5);
+  return (
+    <>
+      <div className="card-grid">
+        {[
+          { label: "Ingresos Totales", value: fmt(totalRevenue), color: "var(--success)", c: "var(--success)" },
+          { label: "Costo de Compras", value: fmt(totalCost), color: "var(--accent2)", c: "var(--accent2)" },
+          { label: "Gastos Operativos", value: fmt(totalExpenses), color: "var(--warning)", c: "var(--warning)" },
+          { label: "Ganancia Neta", value: fmt(profit), color: profit >= 0 ? "var(--success)" : "var(--danger)", c: profit >= 0 ? "var(--success)" : "var(--danger)" },
+        ].map(s => (
+          <div className="stat-card" key={s.label} style={{ "--c": s.c }}>
+            <div className="stat-label">{s.label}</div>
+            <div className="stat-value" style={{ color: s.color }}>{s.value}</div>
+            <div className="progress"><div className="progress-bar" style={{ width: "60%" }} /></div>
+          </div>
+        ))}
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 16 }}>
+        <div className="card">
+          <div className="section-header"><span className="section-title">Últimas Ventas</span></div>
+          {recentSales.length === 0 ? <div className="empty">Sin ventas aún</div> : (
+            <div className="table-wrap"><table>
+              <thead><tr><th>Producto</th><th>Canal</th><th>Total</th></tr></thead>
+              <tbody>{recentSales.map(s => (
+                <tr key={s.id}><td>{s.productName}</td><td><ChannelBadge channel={s.channel} /></td><td style={{ fontFamily: "DM Mono", fontWeight: 700, color: "var(--success)" }}>{fmt(s.total)}</td></tr>
+              ))}</tbody>
+            </table></div>
+          )}
+        </div>
+        <div className="card">
+          <div className="section-header"><span className="section-title">Stock Bajo</span><span className="badge badge-red">{lowStock.length}</span></div>
+          {lowStock.length === 0
+            ? <div className="empty" style={{ padding: "20px" }}>✓ Todo el stock en orden</div>
+            : <div className="table-wrap"><table>
+                <thead><tr><th>Producto</th><th>Stock</th><th>Mínimo</th></tr></thead>
+                <tbody>{lowStock.map(p => (<tr key={p.id}><td>{p.name}</td><td className="stock-low">{p.stock}</td><td style={{ color: "var(--muted)" }}>{p.minStock || 5}</td></tr>))}</tbody>
+              </table></div>
+          }
+        </div>
+      </div>
+      <div className="card">
+        <div className="section-header"><span className="section-title">Últimas Compras</span></div>
+        {recentPurchases.length === 0 ? <div className="empty">Sin compras registradas</div> : (
+          <div className="table-wrap"><table>
+            <thead><tr><th>Fecha</th><th>Producto</th><th>Proveedor</th><th>Qty</th><th>Total</th></tr></thead>
+            <tbody>{recentPurchases.map(p => (
+              <tr key={p.id}>
+                <td style={{ color: "var(--muted)", fontFamily: "DM Mono", fontSize: 12 }}>{fmtDate(p.date)}</td>
+                <td>{p.productName}</td><td>{p.supplier || "—"}</td><td>{p.qty}</td>
+                <td style={{ fontFamily: "DM Mono", fontWeight: 700 }}>{fmt(p.total)}</td>
+              </tr>
+            ))}</tbody>
+          </table></div>
+        )}
+      </div>
+    </>
+  );
+}
+
+// ─── PRODUCTS ─────────────────────────────────────────────────────────
+function Products({ products, setProducts }) {
+  const [modal, setModal] = useState(false);
+  const [form, setForm] = useState({});
+  const [editId, setEditId] = useState(null);
+  const openNew = () => { setForm({ name: "", sku: "", category: "", stock: 0, minStock: 5, costPrice: 0 }); setEditId(null); setModal(true); };
+  const openEdit = (p) => { setForm({ ...p }); setEditId(p.id); setModal(true); };
+  const del = (id) => { if (confirm("¿Eliminar producto?")) setProducts(ps => ps.filter(p => p.id !== id)); };
+  const save = () => {
+    if (!form.name) return alert("Ingresá un nombre");
+    if (editId) setProducts(ps => ps.map(p => p.id === editId ? { ...p, ...form, stock: Number(form.stock), costPrice: Number(form.costPrice), minStock: Number(form.minStock) } : p));
+    else setProducts(ps => [...ps, { ...form, id: uid(), stock: Number(form.stock) || 0, costPrice: Number(form.costPrice) || 0, minStock: Number(form.minStock) || 5 }]);
+    setModal(false);
+  };
+  return (
+    <>
+      <div className="section-header">
+        <div><div className="section-title">Catálogo de Productos</div><div style={{ fontSize: 12, color: "var(--muted)", marginTop: 2 }}>{products.length} productos</div></div>
+        <button className="btn btn-primary" onClick={openNew}><Icon name="plus" size={16} /> Nuevo Producto</button>
+      </div>
+      <div className="card">
+        {products.length === 0 ? <div className="empty">No hay productos. Agregá el primero.</div> : (
+          <div className="table-wrap"><table>
+            <thead><tr><th>Nombre</th><th>SKU</th><th>Categoría</th><th>Stock</th><th>Mín.</th><th>Costo</th><th>Acciones</th></tr></thead>
+            <tbody>{products.map(p => (
+              <tr key={p.id}>
+                <td style={{ fontWeight: 600 }}>{p.name}</td>
+                <td><code style={{ fontSize: 11, color: "var(--accent3)" }}>{p.sku || "—"}</code></td>
+                <td><span className="tag">{p.category || "—"}</span></td>
+                <td className={(p.stock || 0) <= (p.minStock || 5) ? "stock-low" : "stock-ok"}>{p.stock || 0}{(p.stock || 0) <= (p.minStock || 5) && " ⚠"}</td>
+                <td style={{ color: "var(--muted)" }}>{p.minStock || 5}</td>
+                <td style={{ fontFamily: "DM Mono" }}>{fmt(p.costPrice)}</td>
+                <td><div className="gap">
+                  <button className="btn-icon" onClick={() => openEdit(p)}><Icon name="edit" size={14} /></button>
+                  <button className="btn-icon" onClick={() => del(p.id)} style={{ color: "var(--danger)" }}><Icon name="trash" size={14} /></button>
+                </div></td>
+              </tr>
+            ))}</tbody>
+          </table></div>
+        )}
+      </div>
+      {modal && (
+        <Modal title={editId ? "Editar Producto" : "Nuevo Producto"} onClose={() => setModal(false)} onSave={save}>
+          <div className="form-grid">
+            <div className="field" style={{ gridColumn: "1 / -1" }}><label>Nombre *</label><input value={form.name || ""} onChange={e => setForm(f => ({ ...f, name: e.target.value }))} placeholder="Ej: Remera básica blanca" /></div>
+            <div className="field"><label>SKU</label><input value={form.sku || ""} onChange={e => setForm(f => ({ ...f, sku: e.target.value }))} placeholder="SKU-001" /></div>
+            <div className="field"><label>Categoría</label><input value={form.category || ""} onChange={e => setForm(f => ({ ...f, category: e.target.value }))} /></div>
+            <div className="field"><label>Stock actual</label><input type="number" value={form.stock || 0} onChange={e => setForm(f => ({ ...f, stock: e.target.value }))} /></div>
+            <div className="field"><label>Stock mínimo</label><input type="number" value={form.minStock || 5} onChange={e => setForm(f => ({ ...f, minStock: e.target.value }))} /></div>
+            <div className="field"><label>Precio costo ($)</label><input type="number" value={form.costPrice || 0} onChange={e => setForm(f => ({ ...f, costPrice: e.target.value }))} /></div>
+          </div>
+        </Modal>
+      )}
+    </>
+  );
+}
+
+// ─── PURCHASES ────────────────────────────────────────────────────────
+function Purchases({ purchases, setPurchases, products, setProducts }) {
+  const [modal, setModal] = useState(false);
+  const [form, setForm] = useState({});
+  const save = () => {
+    if (!form.productId) return alert("Seleccioná un producto");
+    if (!form.qty || form.qty <= 0) return alert("Cantidad inválida");
+    const product = products.find(p => p.id === form.productId);
+    const qty = Number(form.qty), unitCost = Number(form.unitCost) || 0;
+    setPurchases(ps => [{ id: uid(), productId: form.productId, productName: product?.name || "", supplier: form.supplier || "", qty, unitCost, total: unitCost * qty, date: form.date || new Date().toISOString().split("T")[0], invoice: form.invoice || "" }, ...ps]);
+    setProducts(ps => ps.map(p => p.id === form.productId ? { ...p, stock: (p.stock || 0) + qty, costPrice: unitCost || p.costPrice } : p));
+    setModal(false);
+  };
+  return (
+    <>
+      <div className="section-header">
+        <div className="section-title">Registro de Compras</div>
+        <button className="btn btn-primary" onClick={() => { setForm({ date: new Date().toISOString().split("T")[0] }); setModal(true); }}><Icon name="plus" size={16} /> Nueva Compra</button>
+      </div>
+      <div className="card">
+        {purchases.length === 0 ? <div className="empty">Sin compras. Cada compra actualiza el stock automáticamente.</div> : (
+          <div className="table-wrap"><table>
+            <thead><tr><th>Fecha</th><th>Producto</th><th>Proveedor</th><th>Qty</th><th>Costo u.</th><th>Total</th><th>Factura</th></tr></thead>
+            <tbody>{purchases.map(p => (
+              <tr key={p.id}>
+                <td style={{ fontFamily: "DM Mono", fontSize: 12, color: "var(--muted)" }}>{fmtDate(p.date)}</td>
+                <td style={{ fontWeight: 600 }}>{p.productName}</td><td>{p.supplier || "—"}</td><td>{p.qty}</td>
+                <td style={{ fontFamily: "DM Mono" }}>{fmt(p.unitCost)}</td>
+                <td style={{ fontFamily: "DM Mono", fontWeight: 700, color: "var(--accent2)" }}>{fmt(p.total)}</td>
+                <td><span className="tag">{p.invoice || "—"}</span></td>
+              </tr>
+            ))}</tbody>
+          </table></div>
+        )}
+      </div>
+      {modal && (
+        <Modal title="Nueva Compra" onClose={() => setModal(false)} onSave={save}>
+          <div className="form-grid">
+            <div className="field"><label>Fecha</label><input type="date" value={form.date || ""} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} /></div>
+            <div className="field"><label>Producto *</label><select value={form.productId || ""} onChange={e => setForm(f => ({ ...f, productId: e.target.value }))}><option value="">Seleccionar...</option>{products.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}</select></div>
+            <div className="field"><label>Proveedor</label><input value={form.supplier || ""} onChange={e => setForm(f => ({ ...f, supplier: e.target.value }))} /></div>
+            <div className="field"><label>Cantidad *</label><input type="number" min="1" value={form.qty || ""} onChange={e => setForm(f => ({ ...f, qty: e.target.value }))} /></div>
+            <div className="field"><label>Costo unitario ($)</label><input type="number" value={form.unitCost || ""} onChange={e => setForm(f => ({ ...f, unitCost: e.target.value }))} /></div>
+            <div className="field"><label>N° Factura</label><input value={form.invoice || ""} onChange={e => setForm(f => ({ ...f, invoice: e.target.value }))} placeholder="FAC-001" /></div>
+          </div>
+          {form.qty && form.unitCost && <div className="alert alert-info" style={{ marginTop: 16 }}>Total: <strong>{fmt(Number(form.qty) * Number(form.unitCost))}</strong></div>}
+        </Modal>
+      )}
+    </>
+  );
+}
+
+// ─── SALES ────────────────────────────────────────────────────────────
+function Sales({ sales, setSales, products, setProducts }) {
+  const [modal, setModal] = useState(false);
+  const [form, setForm] = useState({});
+  const [filterCh, setFilterCh] = useState("Todos");
+  const save = () => {
+    if (!form.productId) return alert("Seleccioná un producto");
+    const product = products.find(p => p.id === form.productId);
+    const qty = Number(form.qty);
+    const salePrice = Number(form.salePrice) || 0;
+    if (product && (product.stock || 0) < qty) { if (!confirm(`Stock: ${product.stock}. ¿Continuar?`)) return; }
+    setSales(ss => [{ id: uid(), productId: form.productId, productName: product?.name || "", channel: form.channel || "Otro", qty, salePrice, total: salePrice * qty, date: form.date || new Date().toISOString().split("T")[0], orderId: form.orderId || "" }, ...ss]);
+    setProducts(ps => ps.map(p => p.id === form.productId ? { ...p, stock: Math.max(0, (p.stock || 0) - qty) } : p));
+    setModal(false);
+  };
+  const filtered = filterCh === "Todos" ? sales : sales.filter(s => s.channel === filterCh);
+  return (
+    <>
+      <div className="section-header">
+        <div className="section-title">Registro de Ventas</div>
+        <button className="btn btn-primary" onClick={() => { setForm({ date: new Date().toISOString().split("T")[0], channel: "Mercado Libre" }); setModal(true); }}><Icon name="plus" size={16} /> Nueva Venta</button>
+      </div>
+      <div className="gap" style={{ marginBottom: 16 }}>
+        {["Todos", ...CHANNELS].map(ch => <span key={ch} className={`chip ${filterCh === ch ? "active" : ""}`} onClick={() => setFilterCh(ch)}>{ch}</span>)}
+      </div>
+      <div className="card">
+        {filtered.length === 0 ? <div className="empty">Sin ventas {filterCh !== "Todos" ? `en ${filterCh}` : ""}.</div> : (
+          <div className="table-wrap"><table>
+            <thead><tr><th>Fecha</th><th>Producto</th><th>Canal</th><th>Qty</th><th>P. Venta</th><th>Total</th><th>Orden</th></tr></thead>
+            <tbody>{filtered.map(s => (
+              <tr key={s.id}>
+                <td style={{ fontFamily: "DM Mono", fontSize: 12, color: "var(--muted)" }}>{fmtDate(s.date)}</td>
+                <td style={{ fontWeight: 600 }}>{s.productName}</td><td><ChannelBadge channel={s.channel} /></td>
+                <td>{s.qty}</td><td style={{ fontFamily: "DM Mono" }}>{fmt(s.salePrice)}</td>
+                <td style={{ fontFamily: "DM Mono", fontWeight: 700, color: "var(--success)" }}>{fmt(s.total)}</td>
+                <td><span className="tag">{s.orderId || "—"}</span></td>
+              </tr>
+            ))}</tbody>
+          </table></div>
+        )}
+      </div>
+      {modal && (
+        <Modal title="Nueva Venta" onClose={() => setModal(false)} onSave={save}>
+          <div className="form-grid">
+            <div className="field"><label>Fecha</label><input type="date" value={form.date || ""} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} /></div>
+            <div className="field"><label>Canal *</label><select value={form.channel || "Mercado Libre"} onChange={e => setForm(f => ({ ...f, channel: e.target.value }))}>{CHANNELS.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
+            <div className="field" style={{ gridColumn: "1/-1" }}><label>Producto *</label><select value={form.productId || ""} onChange={e => { const p = products.find(x => x.id === e.target.value); setForm(f => ({ ...f, productId: e.target.value, salePrice: p?.["price_Mercado_Libre"] || "" })); }}><option value="">Seleccionar...</option>{products.map(p => <option key={p.id} value={p.id}>{p.name} (stock: {p.stock || 0})</option>)}</select></div>
+            <div className="field"><label>Cantidad *</label><input type="number" min="1" value={form.qty || ""} onChange={e => setForm(f => ({ ...f, qty: e.target.value }))} /></div>
+            <div className="field"><label>Precio de venta ($)</label><input type="number" value={form.salePrice || ""} onChange={e => setForm(f => ({ ...f, salePrice: e.target.value }))} /></div>
+            <div className="field"><label>N° Orden</label><input value={form.orderId || ""} onChange={e => setForm(f => ({ ...f, orderId: e.target.value }))} placeholder="ML-123456" /></div>
+          </div>
+          {form.qty && form.salePrice && <div className="alert alert-info" style={{ marginTop: 16 }}>Total: <strong>{fmt(Number(form.qty) * Number(form.salePrice))}</strong></div>}
+        </Modal>
+      )}
+    </>
+  );
+}
+
+// ─── EXPENSES ─────────────────────────────────────────────────────────
+const EXP_CATS = ["Alquiler", "Servicios", "Sueldos", "Logística", "Marketing", "Comisiones ML", "Insumos", "Otros"];
+function Expenses({ expenses, setExpenses }) {
+  const [modal, setModal] = useState(false);
+  const [form, setForm] = useState({});
+  const save = () => {
+    if (!form.description || !form.amount) return alert("Completá descripción y monto");
+    setExpenses(es => [{ ...form, id: uid(), amount: Number(form.amount), date: form.date || new Date().toISOString().split("T")[0] }, ...es]);
+    setModal(false);
+  };
+  const del = (id) => { if (confirm("¿Eliminar gasto?")) setExpenses(es => es.filter(e => e.id !== id)); };
+  const byCategory = EXP_CATS.reduce((acc, c) => { acc[c] = expenses.filter(e => e.category === c).reduce((a, e) => a + e.amount, 0); return acc; }, {});
+  const maxCat = Math.max(...Object.values(byCategory), 1);
+  return (
+    <>
+      <div className="section-header">
+        <div className="section-title">Gastos Operativos</div>
+        <button className="btn btn-primary" onClick={() => { setForm({ date: new Date().toISOString().split("T")[0], category: "Otros" }); setModal(true); }}><Icon name="plus" size={16} /> Nuevo Gasto</button>
+      </div>
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 280px", gap: 16 }}>
+        <div className="card">
+          {expenses.length === 0 ? <div className="empty">Sin gastos registrados.</div> : (
+            <div className="table-wrap"><table>
+              <thead><tr><th>Fecha</th><th>Descripción</th><th>Categoría</th><th>Monto</th><th></th></tr></thead>
+              <tbody>{expenses.map(e => (
+                <tr key={e.id}>
+                  <td style={{ fontFamily: "DM Mono", fontSize: 12, color: "var(--muted)" }}>{fmtDate(e.date)}</td>
+                  <td>{e.description}</td><td><span className="tag">{e.category}</span></td>
+                  <td style={{ fontFamily: "DM Mono", fontWeight: 700, color: "var(--accent2)" }}>{fmt(e.amount)}</td>
+                  <td><button className="btn-icon" onClick={() => del(e.id)} style={{ color: "var(--danger)" }}><Icon name="trash" size={14} /></button></td>
+                </tr>
+              ))}</tbody>
+            </table></div>
+          )}
+        </div>
+        <div className="card">
+          <div className="section-title" style={{ marginBottom: 16 }}>Por Categoría</div>
+          {EXP_CATS.map(c => byCategory[c] > 0 && (
+            <div key={c} style={{ marginBottom: 12 }}>
+              <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 4 }}>
+                <span style={{ color: "var(--muted)" }}>{c}</span>
+                <span style={{ fontFamily: "DM Mono", fontWeight: 700 }}>{fmt(byCategory[c])}</span>
+              </div>
+              <div className="progress"><div className="progress-bar" style={{ width: `${(byCategory[c] / maxCat) * 100}%`, background: "var(--accent2)" }} /></div>
+            </div>
+          ))}
+          {expenses.length === 0 && <div style={{ color: "var(--muted)", fontSize: 12, textAlign: "center", padding: "20px 0" }}>Sin datos</div>}
+        </div>
+      </div>
+      {modal && (
+        <Modal title="Nuevo Gasto" onClose={() => setModal(false)} onSave={save}>
+          <div className="form-grid">
+            <div className="field"><label>Fecha</label><input type="date" value={form.date || ""} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} /></div>
+            <div className="field"><label>Categoría</label><select value={form.category || "Otros"} onChange={e => setForm(f => ({ ...f, category: e.target.value }))}>{EXP_CATS.map(c => <option key={c} value={c}>{c}</option>)}</select></div>
+            <div className="field" style={{ gridColumn: "1/-1" }}><label>Descripción *</label><input value={form.description || ""} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} placeholder="Alquiler enero..." /></div>
+            <div className="field"><label>Monto ($) *</label><input type="number" value={form.amount || ""} onChange={e => setForm(f => ({ ...f, amount: e.target.value }))} /></div>
+            <div className="field"><label>Comprobante</label><input value={form.receipt || ""} onChange={e => setForm(f => ({ ...f, receipt: e.target.value }))} placeholder="FAC-0001" /></div>
+          </div>
+        </Modal>
+      )}
+    </>
+  );
+}
+
+// ─── PRICES ───────────────────────────────────────────────────────────
+function Prices({ products, setProducts }) {
+  const [sel, setSel] = useState(null);
+  const [form, setForm] = useState({});
+  const openProduct = (p) => { setSel(p.id); setForm({ ...p }); };
+  const save = () => { setProducts(ps => ps.map(p => p.id === sel ? { ...p, ...form } : p)); setSel(null); };
+  const margin = (cost, sale) => cost > 0 ? (((sale - cost) / cost) * 100).toFixed(1) + "%" : "—";
+  return (
+    <>
+      <div className="section-header">
+        <div className="section-title">Precios por Canal</div>
+        <span style={{ fontSize: 12, color: "var(--muted)" }}>Clic en un producto para editar</span>
+      </div>
+      {sel ? (
+        <div className="card">
+          <div className="modal-header"><h2>Precios — {form.name}</h2><button className="btn-icon" onClick={() => setSel(null)}><Icon name="close" size={16} /></button></div>
+          <div className="alert alert-info">Costo actual: <strong>{fmt(form.costPrice)}</strong></div>
+          <div className="form-grid" style={{ marginBottom: 20 }}>
+            {CHANNELS.map(ch => {
+              const key = "price_" + ch.replace(/\s/g, "_");
+              const val = Number(form[key]) || 0;
+              return (
+                <div className="field" key={ch}>
+                  <label><ChannelBadge channel={ch} /></label>
+                  <input type="number" value={form[key] || ""} onChange={e => setForm(f => ({ ...f, [key]: e.target.value }))} placeholder="0" />
+                  {val > 0 && <div style={{ fontSize: 11, color: "var(--success)", marginTop: 2 }}>Margen: {margin(form.costPrice, val)}</div>}
+                </div>
+              );
+            })}
+          </div>
+          <div className="gap"><button className="btn btn-primary" onClick={save}>Guardar</button><button className="btn btn-ghost" onClick={() => setSel(null)}>Cancelar</button></div>
+        </div>
+      ) : (
+        <div className="card">
+          {products.length === 0 ? <div className="empty">Primero creá productos.</div> : (
+            <div className="table-wrap"><table>
+              <thead><tr><th>Producto</th><th>Costo</th>{CHANNELS.slice(0,4).map(ch => <th key={ch}>{ch}</th>)}<th></th></tr></thead>
+              <tbody>{products.map(p => (
+                <tr key={p.id}>
+                  <td style={{ fontWeight: 600 }}>{p.name}</td>
+                  <td style={{ fontFamily: "DM Mono" }}>{fmt(p.costPrice)}</td>
+                  {CHANNELS.slice(0,4).map(ch => { const key = "price_" + ch.replace(/\s/g, "_"); const val = p[key]; return <td key={ch} style={{ fontFamily: "DM Mono", color: val ? "var(--text)" : "var(--border)" }}>{val ? fmt(val) : "—"}</td>; })}
+                  <td><button className="btn-icon" onClick={() => openProduct(p)}><Icon name="edit" size={14} /></button></td>
+                </tr>
+              ))}</tbody>
+            </table></div>
+          )}
+        </div>
+      )}
+    </>
+  );
+}
+
+// ─── ML PAGE (con integración REAL) ───────────────────────────────────
+function MLPage({ mlConfig, setMlConfig, products, setProducts, sales, setSales }) {
+  const [mlOrders, setMlOrders] = useStore("erp_ml_orders", []);
+  const [syncing, setSyncing] = useState(false);
+  const [publishing, setPublishing] = useState(null);
+  const [syncError, setSyncError] = useState(null);
+  const [log, setLog] = useState([]);
+  const [clientId, setClientId] = useState(mlConfig.clientId || "");
+
+  const addLog = (msg) => setLog(l => [{ msg, t: new Date().toLocaleTimeString("es-AR") }, ...l].slice(0, 30));
+
+  // Leer token del hash de la URL (llegó del callback de Vercel)
+  useEffect(() => {
+    const hash = window.location.hash;
+    if (hash.includes("ml_token=")) {
+      const params = new URLSearchParams(hash.slice(1));
+      const token = params.get("ml_token");
+      const userId = params.get("ml_user_id");
+      if (token && userId) {
+        setMlConfig(c => ({ ...c, connected: true, token, userId, username: "vendedor_ml" }));
+        addLog("✓ Autenticación exitosa con Mercado Libre");
+        window.history.replaceState(null, "", window.location.pathname);
+      }
+    }
+  }, []);
+
+  // Iniciar OAuth real con ML
+  const connectML = () => {
+    if (!clientId) return alert("Ingresá tu Client ID de ML");
+    const redirectUri = encodeURIComponent(window.location.origin + "/api/ml-callback");
+    const mlAuthUrl = `https://auth.mercadolibre.com.ar/authorization?response_type=code&client_id=${clientId}&redirect_uri=${redirectUri}`;
+    setMlConfig(c => ({ ...c, clientId }));
+    window.location.href = mlAuthUrl;
+  };
+
+  const disconnect = () => {
+    if (confirm("¿Desconectar de Mercado Libre?")) {
+      setMlConfig({ connected: false, token: "", username: "", userId: "" });
+      addLog("Desconectado de ML");
+    }
+  };
+
+  // Traer órdenes REALES desde ML vía el proxy de Vercel
+  const syncOrders = async () => {
+    if (!mlConfig.token || !mlConfig.userId) return;
+    setSyncing(true);
+    setSyncError(null);
+    addLog("Sincronizando órdenes desde Mercado Libre...");
+    try {
+      const res = await fetch(`/api/ml-orders?user_id=${mlConfig.userId}&limit=50`, {
+        headers: { Authorization: `Bearer ${mlConfig.token}` },
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Error al sincronizar");
+      setMlOrders(data.orders || []);
+      addLog(`✓ ${data.orders?.length || 0} órdenes sincronizadas (total en ML: ${data.total})`);
+
+      // Importar órdenes nuevas al registro de ventas
+      const existingIds = new Set(sales.map(s => s.ml_order_id));
+      const newOrders = (data.orders || []).filter(o => !existingIds.has(String(o.ml_order_id)));
+      if (newOrders.length > 0) {
+        const newSales = newOrders.map(o => ({
+          id: uid(),
+          ml_order_id: String(o.ml_order_id),
+          productName: o.items?.[0]?.title || "Producto ML",
+          channel: "Mercado Libre",
+          qty: o.items?.[0]?.quantity || 1,
+          salePrice: o.items?.[0]?.unit_price || 0,
+          total: o.total,
+          date: o.date,
+          orderId: String(o.ml_order_id),
+          buyer: o.buyer,
+          payment_status: o.payment_status,
+        }));
+        setSales(ss => [...newSales, ...ss]);
+        addLog(`✓ ${newSales.length} órdenes nuevas importadas al registro de ventas`);
+      } else {
+        addLog("ℹ Sin órdenes nuevas para importar");
+      }
+    } catch (err) {
+      setSyncError(err.message);
+      addLog(`✗ Error: ${err.message}`);
+    }
+    setSyncing(false);
+  };
+
+  const mlSales = sales.filter(s => s.channel === "Mercado Libre");
+  const mlRevenue = mlSales.reduce((a, s) => a + s.total, 0);
+
+  // Pantalla si NO está en Vercel todavía
+  const isVercel = window.location.hostname !== "localhost" && window.location.hostname !== "127.0.0.1" && !window.location.hostname.startsWith("192.");
+  const isFileProtocol = window.location.protocol === "file:";
+
+  if (isFileProtocol || !isVercel) {
+    return (
+      <div>
+        <div className="alert alert-warning" style={{ marginBottom: 24 }}>
+          ⚠ <strong>Estás corriendo el ERP localmente.</strong> Para conectar ML de verdad necesitás subir esto a Vercel. Seguí los pasos abajo.
+        </div>
+        <div className="card" style={{ maxWidth: 680 }}>
+          <div className="section-title" style={{ marginBottom: 20 }}>📋 Guía para subir a Vercel y conectar ML</div>
+          <div className="steps">
+            <div className="step">
+              <div className="step-num">1</div>
+              <div className="step-body">
+                <strong>Descargá la carpeta del proyecto</strong> (el ZIP que te damos) y descomprimila en tu computadora.
+              </div>
+            </div>
+            <div className="step">
+              <div className="step-num">2</div>
+              <div className="step-body">
+                <strong>Creá una cuenta en vercel.com</strong> (gratis, con tu GitHub o email) y hacé clic en "Add New Project".
+              </div>
+            </div>
+            <div className="step">
+              <div className="step-num">3</div>
+              <div className="step-body">
+                <strong>Subí la carpeta del proyecto.</strong> Podés arrastrarla directamente en Vercel o conectar tu GitHub.
+              </div>
+            </div>
+            <div className="step">
+              <div className="step-num">4</div>
+              <div className="step-body">
+                <strong>Configurá las variables de entorno</strong> en Vercel → Settings → Environment Variables:
+                <pre>{`ML_CLIENT_ID      = tu_client_id_de_ml
+ML_CLIENT_SECRET  = tu_client_secret_de_ml
+ML_REDIRECT_URI   = https://TU-APP.vercel.app/api/ml-callback
+FRONTEND_URL      = https://TU-APP.vercel.app`}</pre>
+              </div>
+            </div>
+            <div className="step">
+              <div className="step-num">5</div>
+              <div className="step-body">
+                <strong>En ML Developers</strong> (developers.mercadolibre.com.ar) → tu app → "URIs de redirección", agregá:<br/>
+                <code style={{ color: "var(--accent)", fontSize: 12 }}>https://TU-APP.vercel.app/api/ml-callback</code>
+              </div>
+            </div>
+            <div className="step">
+              <div className="step-num">6</div>
+              <div className="step-body">
+                <strong>Listo.</strong> Abrí la URL de Vercel, andá a la sección Mercado Libre y hacé clic en "Conectar con ML". Se va a abrir ML para que autoricés, y después te va a redirigir de vuelta con el token real.
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Pantalla de conexión (en Vercel, sin token todavía)
+  if (!mlConfig.connected) return (
+    <div className="card" style={{ maxWidth: 480 }}>
+      <div style={{ textAlign: "center", marginBottom: 24 }}>
+        <div style={{ fontSize: 48, marginBottom: 8 }}>🛒</div>
+        <h2 style={{ fontSize: 20, fontWeight: 800, marginBottom: 8 }}>Conectar con Mercado Libre</h2>
+        <p style={{ color: "var(--muted)", fontSize: 13, lineHeight: 1.6 }}>Autenticación OAuth2 oficial. Te va a redirigir a ML para autorizar y volver acá con tus órdenes reales.</p>
+      </div>
+      <div className="field" style={{ marginBottom: 16 }}>
+        <label>Tu Client ID de ML</label>
+        <input value={clientId} onChange={e => setClientId(e.target.value)} placeholder="1234567890" />
+      </div>
+      <button className="btn btn-primary" style={{ width: "100%", justifyContent: "center" }} onClick={connectML}>
+        <Icon name="connect" size={16} /> Autorizar con Mercado Libre
+      </button>
+    </div>
+  );
+
+  // Dashboard ML conectado
+  return (
+    <>
+      <div className="ml-connect-banner">
+        <div>
+          <div style={{ fontWeight: 800, fontSize: 16, display: "flex", alignItems: "center", gap: 8 }}>
+            <span className="ml-badge">ML</span> Conectado — User ID: {mlConfig.userId}
+          </div>
+          <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 4 }}>Token: {mlConfig.token?.slice(0, 30)}...</div>
+        </div>
+        <div className="gap">
+          <button className="btn btn-primary btn-sm" onClick={syncOrders} disabled={syncing}>
+            {syncing ? <><span className="spinner" /> Sincronizando...</> : <><Icon name="sync" size={14} /> Traer órdenes de ML</>}
+          </button>
+          <button className="btn btn-danger btn-sm" onClick={disconnect}>Desconectar</button>
+        </div>
+      </div>
+
+      {syncError && <div className="alert alert-danger">✗ {syncError}</div>}
+
+      <div className="card-grid">
+        {[
+          { label: "Órdenes en ML", value: mlOrders.length, c: "var(--ml-yellow)" },
+          { label: "Ventas importadas", value: mlSales.length, c: "var(--success)" },
+          { label: "Revenue ML", value: fmt(mlRevenue), c: "var(--accent3)" },
+        ].map(s => (
+          <div className="stat-card" key={s.label} style={{ "--c": s.c }}>
+            <div className="stat-label">{s.label}</div>
+            <div className="stat-value" style={{ color: s.c, fontSize: 22 }}>{s.value}</div>
+          </div>
+        ))}
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 300px", gap: 16 }}>
+        <div className="card">
+          <div className="section-header"><span className="section-title">Órdenes de Mercado Libre</span>{syncing && <span className="spinner" />}</div>
+          {mlOrders.length === 0
+            ? <div className="empty">Presioná "Traer órdenes de ML" para sincronizar tus ventas reales.</div>
+            : <div className="table-wrap"><table>
+                <thead><tr><th>Fecha</th><th>Orden ML</th><th>Producto</th><th>Qty</th><th>Total</th><th>Estado</th></tr></thead>
+                <tbody>{mlOrders.map(o => (
+                  <tr key={o.ml_order_id}>
+                    <td style={{ fontFamily: "DM Mono", fontSize: 12, color: "var(--muted)" }}>{fmtDate(o.date)}</td>
+                    <td><code style={{ fontSize: 11, color: "var(--accent3)" }}>{o.ml_order_id}</code></td>
+                    <td>{o.items?.[0]?.title || "—"}</td>
+                    <td>{o.items?.[0]?.quantity || "—"}</td>
+                    <td style={{ fontFamily: "DM Mono", fontWeight: 700, color: "var(--success)" }}>{fmt(o.total)}</td>
+                    <td><MLStatusBadge status={o.payment_status} /></td>
+                  </tr>
+                ))}</tbody>
+              </table></div>
+          }
+        </div>
+
+        <div className="card">
+          <div className="section-title" style={{ marginBottom: 12 }}>Log de sincronización</div>
+          {log.length === 0
+            ? <div style={{ color: "var(--muted)", fontSize: 12 }}>Sin actividad aún.</div>
+            : <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
+                {log.map((l, i) => (
+                  <div key={i}>
+                    <div style={{ color: "var(--muted)", fontFamily: "DM Mono", fontSize: 10 }}>{l.t}</div>
+                    <div style={{ fontSize: 12, color: l.msg.startsWith("✓") ? "var(--success)" : l.msg.startsWith("✗") ? "var(--danger)" : "var(--text)" }}>{l.msg}</div>
+                  </div>
+                ))}
+              </div>
+          }
+        </div>
+      </div>
+    </>
+  );
+}
+
+// ─── APP ──────────────────────────────────────────────────────────────
+function App() {
+  const [page, setPage] = useState("dashboard");
+  const [products, setProducts] = useStore("erp_products", []);
+  const [purchases, setPurchases] = useStore("erp_purchases", []);
+  const [sales, setSales] = useStore("erp_sales", []);
+  const [expenses, setExpenses] = useStore("erp_expenses", []);
+  const [mlConfig, setMlConfig] = useStore("erp_ml", { connected: false, token: "", username: "", userId: "", clientId: "" });
+
+  const nav = [
+    { id: "dashboard", label: "Dashboard", icon: "dashboard" },
+    { id: "products", label: "Productos", icon: "stock" },
+    { id: "purchases", label: "Compras", icon: "purchases" },
+    { id: "sales", label: "Ventas", icon: "sales" },
+    { id: "expenses", label: "Gastos", icon: "expenses" },
+    { id: "prices", label: "Precios", icon: "prices" },
+    { id: "ml", label: "Mercado Libre", icon: "ml" },
+  ];
+  const titles = { dashboard: "Dashboard", products: "Productos & Stock", purchases: "Compras", sales: "Ventas", expenses: "Gastos", prices: "Gestión de Precios", ml: "Mercado Libre" };
+  const pageMap = { dashboard: Dashboard, products: Products, purchases: Purchases, sales: Sales, expenses: Expenses, prices: Prices, ml: MLPage };
+  const PageComp = pageMap[page];
+  const props = { products, setProducts, purchases, setPurchases, sales, setSales, expenses, setExpenses, mlConfig, setMlConfig };
+
+  return (
+    <div className="app">
+      <nav className="sidebar">
+        <div className="sidebar-logo">mini<span>ERP</span></div>
+        <div className="sidebar-nav">
+          {nav.map(n => (
+            <div key={n.id} className={`nav-item ${page === n.id ? "active" : ""}`} onClick={() => setPage(n.id)}>
+              <Icon name={n.icon} size={16} />
+              {n.label}
+              {n.id === "ml" && mlConfig.connected && <span className="ml-badge" style={{ marginLeft: "auto" }}>ON</span>}
+            </div>
+          ))}
+        </div>
+        <div className="sidebar-footer">
+          <div>miniERP v2.0</div>
+          <div style={{ marginTop: 4 }}>+ Integración ML real</div>
+        </div>
+      </nav>
+      <div className="main">
+        <div className="topbar">
+          <h1>{titles[page]}</h1>
+          <div style={{ fontSize: 12, color: "var(--muted)", display: "flex", alignItems: "center", gap: 6 }}>
+            <Icon name="sync" size={13} />
+            {new Date().toLocaleDateString("es-AR", { weekday: "long", day: "numeric", month: "long", year: "numeric" })}
+          </div>
+        </div>
+        <div className="content">
+          <PageComp {...props} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+</script>
+</body>
+</html>
